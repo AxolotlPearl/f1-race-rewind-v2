@@ -18,7 +18,7 @@ import { getSessionInfo } from "../lib/openf1.js";
 import { buildTrackAuto, buildTrackFromWindow } from "../lib/trackBuilder.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT_DIR = path.join(__dirname, "../public/tracks");
+const OUT_DIR = path.join(__dirname, "../data/tracks");
 
 async function main() {
   const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
