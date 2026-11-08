@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 600" width="1160" height="600" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <pattern id="gridSmall" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M10 0H0V10" fill="none" stroke="#1f1f1f" stroke-width="1"/>
+    </pattern>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <rect width="50" height="50" fill="url(#gridSmall)"/>
+      <path d="M50 0H0V50" fill="none" stroke="#2c2c2c" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#ffffff"/>
+    </marker>
+    <marker id="arrowDim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#9a9a9a"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect width="1160" height="600" fill="#141414"/>
+  <rect width="1160" height="600" fill="url(#grid)"/>
+
+  <!-- title -->
+  <text x="40" y="52" fill="#ffffff" font-size="22" font-weight="600">F1 Race Rewind — Architecture</text>
+  <text x="40" y="76" fill="#9a9a9a" font-size="13">Browser → Express on Vercel → OpenF1 public API</text>
+
+  <!-- ===== main boxes ===== -->
+  <g fill="#141414" stroke="#ffffff" stroke-width="1.5">
+    <rect x="60"  y="130" width="250" height="80"/>
+    <rect x="455" y="130" width="250" height="80"/>
+    <rect x="850" y="130" width="250" height="80"/>
+  </g>
+  <g fill="#ffffff" font-size="17" text-anchor="middle">
+    <text x="185" y="165">frontend</text>
+    <text x="580" y="165">backend</text>
+    <text x="975" y="165">api</text>
+  </g>
+  <g fill="#9a9a9a" font-size="12" text-anchor="middle">
+    <text x="185" y="188">public/ · vanilla JS</text>
+    <text x="580" y="188">Express · api/index.js (Vercel)</text>
+    <text x="975" y="188">OpenF1 · api.openf1.org/v1</text>
+  </g>
+
+  <!-- ===== arrows between main boxes ===== -->
+  <g stroke="#ffffff" stroke-width="1.5" fill="none">
+    <line x1="310" y1="158" x2="453" y2="158" marker-end="url(#arrow)"/>
+    <line x1="705" y1="158" x2="848" y2="158" marker-end="url(#arrow)"/>
+  </g>
+  <g stroke="#9a9a9a" stroke-width="1.2" fill="none" stroke-dasharray="5 4">
+    <line x1="453" y1="186" x2="312" y2="186" marker-end="url(#arrowDim)"/>
+    <line x1="848" y1="186" x2="707" y2="186" marker-end="url(#arrowDim)"/>
+  </g>
+  <g font-size="11" text-anchor="middle">
+    <text x="382" y="148" fill="#ffffff">GET /api/*</text>
+    <text x="382" y="204" fill="#9a9a9a">JSON</text>
+    <text x="777" y="148" fill="#ffffff">fetch (rate-limited)</text>
+    <text x="777" y="204" fill="#9a9a9a">JSON</text>
+  </g>
+
+  <!-- ===== detail panels ===== -->
+  <g fill="none" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="4 3">
+    <line x1="185" y1="210" x2="185" y2="250"/>
+    <line x1="580" y1="210" x2="580" y2="250"/>
+    <line x1="975" y1="210" x2="975" y2="250"/>
+  </g>
+  <g fill="#181818" stroke="#6a6a6a" stroke-width="1">
+    <rect x="60"  y="250" width="250" height="300"/>
+    <rect x="455" y="250" width="250" height="300"/>
+    <rect x="850" y="250" width="250" height="300"/>
+  </g>
+
+  <!-- frontend details -->
+  <g font-size="12.5">
+    <text x="76" y="276" fill="#ffffff" font-weight="600">Files</text>
+    <text x="76" y="296" fill="#cfcfcf">index.html · style.css · app.js</text>
+    <text x="76" y="314" fill="#cfcfcf">tracks/&lt;circuitKey&gt;.json (26)</text>
+
+    <text x="76" y="346" fill="#ffffff" font-weight="600">UI</text>
+    <text x="76" y="366" fill="#cfcfcf">SVG track map + replay player</text>
+    <text x="76" y="384" fill="#cfcfcf">Event timeline (synced to map)</text>
+    <text x="76" y="402" fill="#cfcfcf">Results table · fastest pit stops</text>
+    <text x="76" y="420" fill="#cfcfcf">Sort / filter / highlight in memory</text>
+
+    <text x="76" y="452" fill="#ffffff" font-weight="600">Shared DSA (ES modules)</text>
+    <text x="76" y="472" fill="#cfcfcf">imports /lib directly</text>
+    <text x="76" y="490" fill="#cfcfcf">Queue = position chunk buffer</text>
+
+    <text x="76" y="522" fill="#ffffff" font-weight="600">Cache</text>
+    <text x="76" y="540" fill="#cfcfcf">localStorage (with expiry)</text>
+  </g>
+
+  <!-- backend details -->
+  <g font-size="12.5">
+    <text x="471" y="276" fill="#ffffff" font-weight="600">Routes</text>
+    <text x="471" y="296" fill="#cfcfcf">/api/years</text>
+    <text x="471" y="314" fill="#cfcfcf">/api/races?year=</text>
+    <text x="471" y="332" fill="#cfcfcf">/api/race/:sessionKey</text>
+    <text x="471" y="350" fill="#cfcfcf">/api/positions/:sessionKey?from=&amp;to=</text>
+    <text x="471" y="368" fill="#cfcfcf">/api/track/:sessionKey</text>
+
+    <text x="471" y="400" fill="#ffffff" font-weight="600">lib/</text>
+    <text x="471" y="420" fill="#cfcfcf">rateLimiter (2-level Queue)</text>
+    <text x="471" y="438" fill="#cfcfcf">HashTable · merge sort</text>
+    <text x="471" y="456" fill="#cfcfcf">timeline · positions · trackBuilder</text>
+
+    <text x="471" y="488" fill="#ffffff" font-weight="600">Cache</text>
+    <text x="471" y="508" fill="#cfcfcf">Vercel CDN (s-maxage)</text>
+    <text x="471" y="526" fill="#cfcfcf">module-scope in serverless fn</text>
+  </g>
+
+  <!-- api details -->
+  <g font-size="12.5">
+    <text x="866" y="276" fill="#ffffff" font-weight="600">Endpoints used</text>
+    <text x="866" y="296" fill="#cfcfcf">/meetings · /sessions</text>
+    <text x="866" y="314" fill="#cfcfcf">/drivers</text>
+    <text x="866" y="332" fill="#cfcfcf">/overtakes</text>
+    <text x="866" y="350" fill="#cfcfcf">/pit</text>
+    <text x="866" y="368" fill="#cfcfcf">/race_control</text>
+    <text x="866" y="386" fill="#cfcfcf">/session_result</text>
+    <text x="866" y="404" fill="#cfcfcf">/location</text>
+
+    <text x="866" y="436" fill="#ffffff" font-weight="600">Limits</text>
+    <text x="866" y="456" fill="#cfcfcf">3 req/s · 30 req/min</text>
+    <text x="866" y="474" fill="#cfcfcf">public, no API key</text>
+    <text x="866" y="492" fill="#cfcfcf">/pit → 404 when no data</text>
+  </g>
+</svg>

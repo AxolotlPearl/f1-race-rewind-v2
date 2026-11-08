@@ -1,216 +1,312 @@
-# 🏁 F1 Race Rewind
+# 🏁 F1 Race Rewind v2 — React + Vite / Express
 
-โปรเจกต์วิชา **801201 การออกแบบอัลกอริทึมและการพัฒนาเว็บไซต์** — โปรเจกต์ API + UX (15 คะแนน)
+ใบงาน **ต่อยอดงาน API ด้วย React-Vite + Express** วิชา 801201 การออกแบบอัลกอริทึมและการพัฒนาเว็บ
 
-**เว็บที่ deploy แล้ว:** https://miniprojectnodejs.vercel.app
-**GitHub:** https://github.com/AxolotlPearl/f1-race-rewind
-**Decision Log (ตอบ 3 ข้อบังคับ):** [docs/decision-log.md](docs/decision-log.md)
-
----
-
-## เว็บนี้คืออะไร
-
-**F1 Race Rewind** เป็นเว็บแอปสำหรับ "ดูย้อนหลัง" ว่าการแข่งขัน Formula 1 แต่ละสนามในอดีตเกิดอะไรขึ้นบ้าง
-โดยดึงข้อมูลจริงจาก [OpenF1 API](https://openf1.org) (public API ไม่ต้องใช้ API key) มาแปลงเป็น:
-
-1. **ไทม์ไลน์เหตุการณ์** ที่เรียงตามเวลา — การแซง, การเข้าพิท, ธง/safety car — พร้อมสีทีมจริงของนักขับ
-2. **แผนที่สนามแบบ SVG** ที่วาดเส้นสนามจริงจากพิกัด GPS ของรถ พร้อม "เล่นย้อนหลัง" ตำแหน่งรถบนแผนที่แบบ
-   synced กับไทม์ไลน์ด้านล่าง คล้ายแอปถ่ายทอดสด F1 อย่างเป็นทางการ
-
-**ปัญหา UX ที่ต้องแก้จริง ๆ คือ**: ข้อมูลดิบจาก OpenF1 กระจายอยู่คนละ endpoint (นักขับ, การแซง, การเข้าพิท,
-ธง, ผลจบการแข่งขัน, พิกัดรถ) ผู้ใช้ไม่อยากเห็นข้อมูลดิบเป็น JSON กระจาย ๆ แต่อยากเห็น "เรื่องราวของเรซ" เรียง
-เวลาเดียวกัน คลิกดูรายละเอียดได้ กรอง/เรียงได้ทันทีโดยไม่ต้องรอโหลดใหม่ และเห็นภาพว่าจริง ๆ แล้วเหตุการณ์
-นั้นเกิดขึ้น "ตรงไหนของสนาม"
-
----
-
-## วิธีใช้งาน (สำหรับ demo/อาจารย์)
-
-1. เปิดเว็บ → **มีเรซโหลดไว้ให้แล้วทันที** คือเรซล่าสุดที่แข่งจบแล้วของปีล่าสุด ไม่ต้องเลือกอะไรก่อน
-2. เปลี่ยนปี/เรซได้จากดรอปดาวน์ด้านบน — **รองรับตั้งแต่ปี 2023 ถึงปีปัจจุบันโดยอัตโนมัติ** เรซใหม่ที่เพิ่งแข่งจบ
-   จะโผล่เองภายใน ~10 นาที (ปีใหม่ก็โผล่เอง) ไม่ต้องแก้โค้ด; เรซในปฏิทินที่ยังไม่แข่งหรือถูกยกเลิกจะไม่แสดง
-3. **แผนที่สนาม** (ด้านบน): มีปุ่ม ▶ เล่น/หยุด, ⏪⏩ ข้าม 10 วินาที, ปุ่มความเร็ว x1/x2/x5/x10 และ scrubber
-   ลากดูช่วงเวลาที่ต้องการเองได้ — รถแต่ละคันแสดงเป็นจุดสีทีมจริง มี badge "🔧 PIT" ขึ้นตอนกำลังเข้าพิท
-   - ตัวเล่น**โหลดข้อมูลเก็บไว้ล่วงหน้าก่อนแล้วค่อยวิ่ง** (เหมือนวิดีโอ) แถบสีเทาใต้ scrubber คือช่วงที่โหลดแล้ว
-     ถ้าข้อมูลไม่พอจะขึ้น "⏳ กำลังโหลดข้อมูลล่วงหน้า xx%" แล้ววิ่งต่อเอง แทนที่รถจะค้างกระตุก
-4. **ไทม์ไลน์เหตุการณ์** (ใต้แผนที่): เลื่อนตามเวลาปัจจุบันของแผนที่แบบ real-time โดยอัตโนมัติ (การ์ดที่ตรง
-   เวลาจะสว่างขึ้นและลอยขึ้นบนสุดของกล่อง) หรือคลิกการ์ดเหตุการณ์ไหนก็ได้เพื่อเล่นแอนิเมชันตำแหน่งรถ ±5
-   วินาทีรอบเหตุการณ์นั้นบนแผนที่ทันที
-5. ปุ่ม **เรียง**: ตามเวลา / ตามรอบ / ตามนักขับ — สลับได้ทันทีไม่มีหน่วง (เรียงในหน่วยความจำ ไม่ยิง API ใหม่)
-6. ตัวกรอง **นักขับ** / **ประเภทเหตุการณ์** — กรองไทม์ไลน์ทันที
-7. คลิกชื่อนักขับในการ์ดใด ๆ (เช่น "VER") → ไฮไลต์เหตุการณ์ทั้งหมดของนักขับคนนั้น คนอื่นจางลง
-8. ด้านข้าง: **ตารางผลจบการแข่งขัน** (คลิกหัวคอลัมน์เพื่อเรียง) และ **อันดับพิทสต็อปเร็วสุด**
-9. ถ้าเรซไหนไม่มีข้อมูลบางประเภท (เช่นไม่มีข้อมูลการเข้าพิท) จะขึ้น empty state บอกชัดเจน ไม่ทำให้หน้าเว็บพัง
-
----
-
-## ทำอะไรไปบ้าง (สรุปตามเฟส)
-
-### เฟส 0 — สำรวจ API จริง
-ยิง OpenF1 API จริงกับหลายเรซก่อนเขียนโค้ด เพื่อรู้ shape ของข้อมูลจริงและเคส edge case เช่น:
-- `/pit` ตอบ **HTTP 404** (ไม่ใช่ array ว่าง) เมื่อไม่มีข้อมูล
-- `team_colour` casing ไม่คงที่ระหว่างปี (ตัวใหญ่/เล็กสลับกัน)
-- `/overtakes` ไม่มี field `lap_number` มาให้ ต้องประมาณเอาเอง
-
-### เฟส 1 — แกนหลัก: ไทม์ไลน์ + ผลการแข่งขัน
-- ดึง `drivers` + `overtakes` + `pit` + `race_control` + `session_result` พร้อมกัน แล้ว **merge เป็นไทม์ไลน์
-  เดียวเรียงตามเวลา** ด้วย merge sort ที่เขียนเอง
-- Rate limiter คุมไม่ให้ยิง OpenF1 เกิน 3 req/s และ 30 req/min (OpenF1 จำกัดไว้)
-- Sort / filter / ไฮไลต์นักขับ ทำงานในหน่วยความจำฝั่ง client ทั้งหมด ตอบสนองทันที
-- Loading skeleton, empty state, error state ครบทุกส่วน (timeline, ผลการแข่งขัน, พิทสต็อป, สรุปเรซ)
-
-### เฟส 2 — แผนที่สนามและการเล่นย้อนหลัง
-- `scripts/build-track.js` ดึงพิกัดรถ 1 คนจาก `/location` แล้วตัดให้เหลือ "1 รอบสนามพอดี" → precompute
-  เป็นไฟล์ JSON ไว้ล่วงหน้า (ไม่คำนวณตอน runtime เพื่อไม่ให้ Vercel serverless ช้า/timeout) — ตอนแรกทำไว้ 24 สนาม
-  ปี 2023–2025 ปัจจุบันมี 26 สนามรวมสนามใหม่ปี 2026 (วิธีหา 1 รอบถูกปรับให้ทนขึ้นภายหลัง ดูหัวข้อถัดไป)
-- คลิกเหตุการณ์ในไทม์ไลน์ → เล่นช่วง ±5 วินาทีรอบเหตุการณ์นั้นบนแผนที่ที่ความเร็วจริง พร้อมไฮไลต์นักขับที่เกี่ยวข้อง
-- ปุ่มควบคุมการเล่นแบบเต็มรูปแบบ: เล่น/หยุด, ข้าม ±10 วินาที, ปรับความเร็ว x1/x2/x5/x10
-- Badge "🔧 PIT" บนแผนที่ตอนรถกำลังเข้าพิทจริง (คำนวณจากเวลา+ระยะเวลาที่เข้าพิทจริง)
-- ไทม์ไลน์เลื่อนตามเวลาปัจจุบันของแผนที่แบบต่อเนื่อง (ไม่กระโดดทีละการ์ด) ในกล่องเลื่อนของตัวเอง
-  เพื่อให้เห็นแผนที่กับไทม์ไลน์พร้อมกันตลอดเวลา ไม่ต้องเลื่อนหน้าเว็บทั้งหน้า
-
-### อัปเดตรองรับปี 2026 + แก้แผนที่กระตุก
-- **ปี/เรซใหม่ไม่ต้องแก้โค้ด**: ช่วงปีคำนวณจากวันที่ปัจจุบัน (`/api/years`), กรองเรซที่ยังไม่แข่ง/ถูกยกเลิก,
-  cache ของปีปัจจุบันหมดอายุใน 10 นาที (ปีที่จบแล้ว cache ถาวร)
-- **สนามใหม่ไม่ต้องแก้โค้ด**: ถ้าไม่มีไฟล์เส้นสนาม precompute ไว้ server จะสร้างสดจากพิกัดจริงผ่าน
-  `/api/track/:sessionKey` (ลองหลายนักขับ/หลายช่วงของเรซเอง เผื่อมีธงแดง) แล้ว cache ที่ CDN 30 วัน —
-  ทดสอบแล้วกับสนามใหม่ปี 2026 ทั้งสองสนาม (Madring, Kuala Lumpur) ก่อนจะ precompute ไว้ให้เร็วขึ้นภายหลัง
-- **วิธีหา 1 รอบสนามแบบใหม่**: เลือก "จุดที่วนกลับมาใกล้จุดเริ่มที่สุด" ในช่วง 55–160 วินาที แทน "จุดแรกที่ผ่าน
-  threshold" — แก้ได้ทั้ง Suzuka (สนามตัดกันเองเลยจับจุดหลอก) และ Kuala Lumpur (GPS ห่างจนไม่ผ่าน threshold)
-- **แก้กระตุก**: ตัวเล่นเก็บพิกัดเป็นก้อนในคิวล่วงหน้า, รอให้มีข้อมูลพอก่อนค่อยวิ่ง, ถ้าเน็ตช้าจะหยุดนาฬิการอ
-  แทนที่เวลาเดินแต่รถค้าง; ลดงานต่อเฟรม (parse วันที่ครั้งเดียวตอนโหลด, binary search, ไม่อ่าน layout
-  ทุกเฟรม, อัปเดต scrubber เฉพาะตอนวินาทีเปลี่ยน — วัดแล้วการเขียนค่า scrubber ทุกเฟรมแพงที่สุดในเฟรม)
-- **Rate limiter 2 ระดับ**: request ที่ผู้ใช้กำลังรอ ลัดหน้าการโหลดล่วงหน้า และกันโควตา 10/30 ต่อนาทีไว้ให้
-  เสมอ — ก่อนแก้ สลับเรซเร็ว ๆ แล้วเปิดเรซใหม่ต้องรอ ~15–45 วินาที หลังแก้เหลือ ~3.5 วินาที
-
----
-
-## ทำงานยังไง (สถาปัตยกรรม)
-
-```
-ผู้ใช้เลือกเรซ
-   │
-   ▼
-GET /api/race/:sessionKey  (Express, api/index.js)
-   │
-   ├─ เรียก OpenF1 5 endpoint พร้อมกัน ผ่าน rate limiter (lib/rateLimiter.js ใช้ Queue คุมจังหวะ)
-   ├─ enrich ทุก event ด้วยชื่อ/ทีม/สีทีมนักขับ ผ่าน Hash Table (lib/HashTable.js) แบบ O(1) เฉลี่ย
-   ├─ รวม 3 แหล่ง event เป็นไทม์ไลน์เดียวด้วย merge sort ที่เขียนเอง (lib/sort.js)
-   └─ ส่ง JSON ก้อนเดียวกลับไปให้ frontend (events, drivers, ผลการแข่งขัน, พิทสต็อปที่เรียงแล้ว)
-   │
-   ▼
-Frontend (public/app.js, vanilla JS ไม่มี framework)
-   ├─ import DSA ชุดเดียวกับ server ตรงจาก /lib (ES module, ไม่ duplicate โค้ด)
-   ├─ เรียง/กรอง/ไฮไลต์ ทำในหน่วยความจำทั้งหมด
-   └─ แผนที่: โหลดเส้นสนามจาก public/tracks/<circuitKey>.json (ไม่มี → GET /api/track/:sessionKey สร้างสด)
-      + ดึงพิกัดเป็นก้อนละ 50 วินาทีจาก GET /api/positions/:sessionKey?from=&to= (≤ 60 วินาทีต่อ request)
-      ขอบก้อนจัดให้ตรงตารางเวลาเสมอ URL จึงซ้ำได้และ CDN ตอบจาก cache ได้
-```
-
-Cache 3 ชั้น: CDN ของ Vercel (`Cache-Control: s-maxage`) → module-scope ใน serverless function →
-localStorage ในเบราว์เซอร์ (ข้อมูลที่ยังเปลี่ยนได้ เช่นรายชื่อเรซปีปัจจุบัน มีวันหมดอายุ)
-
-### API ของเว็บนี้ (Express)
-
-| Route | ทำอะไร |
+| | |
 |---|---|
-| `GET /api/years` | ปีที่เลือกได้ (2023 ถึงปีปัจจุบัน คำนวณจากวันที่) |
-| `GET /api/races?year=` | เรซที่แข่งจบแล้วของปีนั้น (ตัดเรซที่ยังไม่แข่ง/ถูกยกเลิก) |
-| `GET /api/race/:sessionKey` | ไทม์ไลน์ที่รวมแล้ว + นักขับ + ผลจบการแข่ง + พิทสต็อปเร็วสุด + สรุปเรซ (ก้อนเดียว) |
-| `GET /api/positions/:sessionKey?from=&to=` | พิกัดรถทุกคันในช่วงเวลา ≤ 60 วินาที (downsample แล้ว, เกินตอบ 400) |
-| `GET /api/track/:sessionKey` | สร้างเส้นสนามสด สำหรับสนามที่ไม่มีไฟล์ใน `public/tracks/` |
+| **API ที่ใช้** | [OpenF1 API](https://openf1.org) (API เดิมจากงานแรก ไม่ต้องใช้ API key) |
+| **งานแรก (Before)** | repo [AxolotlPearl/f1-race-rewind](https://github.com/AxolotlPearl/f1-race-rewind) · เว็บ https://miniprojectnodejs.vercel.app |
+| **งานนี้ (After)** | repo นี้ (fork มาจากงานแรก ประวัติ commit เดิมอยู่ครบ) |
+| **คลิปนำเสนอ** | _(ใส่ลิงก์ YouTube แบบ Unlisted)_ |
 
-## DSA ที่ใช้ (ครบ Sort บังคับ + เกินขั้นต่ำอีก 2 ตัว)
+เว็บสำหรับ "ดูย้อนหลัง" ว่าเรซ Formula 1 แต่ละสนามเกิดอะไรขึ้น: ไทม์ไลน์การแซง/เข้าพิท/ธง, แผนที่สนามที่รถวิ่งจริง
+และ (ใหม่) หน้าเจาะนักขับรายคน + ค้นหาเรซข้ามทุกฤดูกาล
 
-| DSA | ใช้ที่ไหน | แก้ปัญหา UX อะไร |
+---
+
+## วิธีรัน
+
+ต้องมี Node.js 18 ขึ้นไป
+
+```bash
+npm run install:all
+```
+
+เปิด 2 terminal:
+
+```bash
+npm run dev:backend
+```
+
+```bash
+npm run dev:frontend
+```
+
+แล้วเปิด http://localhost:5173 — Vite proxy `/api/*` ไปหา Express ที่พอร์ต 3001 ให้เอง ([frontend/vite.config.js](frontend/vite.config.js))
+
+รันแบบ production เครื่องเดียว (Express เสิร์ฟทั้ง API และไฟล์ React ที่ build แล้ว) ที่ http://localhost:3001:
+
+```bash
+npm run build && npm start
+```
+
+ทดสอบ DSA ฝั่ง backend (merge sort, HashTable, Queue, rate limiter, Trie):
+
+```bash
+npm test
+```
+
+## โครงสร้างโปรเจกต์
+
+```
+frontend/                React + Vite
+  src/Graph.js           ★ Graph (adjacency list + BFS) เชื่อมเมนูกับหน้า
+  src/App.jsx            Routes + state ที่ใช้ร่วมกันหลายหน้า
+  src/pages/             HomePage, RacePage, DriverPage, AboutPage, NotFoundPage
+  src/components/        NavBar, SearchBox, RaceCard, SummaryBar, TrackMap, TimelinePanel,
+                         TimelineCard, ResultsTable, FastestPits, StatusViews
+  src/hooks/useAsync.js  hook โหลดข้อมูล (loading/empty/error/success + กันยิงซ้ำ)
+  src/player/MapPlayer.js เครื่องเล่นตำแหน่งรถบนแผนที่ (requestAnimationFrame)
+  src/dsa/               mergeSort, HashTable, Queue (ชุดเดียวกับ backend)
+  src/api.js             เรียก Express + cache ใน localStorage
+backend/                 Express
+  server.js              routes + validate + error middleware
+  lib/Trie.js            ★ Trie สำหรับค้นหาเรซ (DSA ใหม่)
+  lib/searchIndex.js     ดัชนีค้นหาข้ามทุกปี
+  lib/driverStory.js     ★ สรุปเรื่องราวนักขับ (ประมวลผลที่ server)
+  lib/races.js           รายชื่อเรซที่แข่งจบแล้ว
+  lib/timeline.js        รวม 5 endpoint เป็นไทม์ไลน์เดียว (merge sort)
+  lib/openf1.js          client + cache (HashTable) + retry
+  lib/rateLimiter.js     คิว 2 ระดับคุม 3 req/s, 30 req/min
+  lib/trackBuilder.js    สร้างเส้นสนามจากพิกัด GPS
+  data/tracks/           เส้นสนามที่ precompute ไว้ (26 สนาม)
+  test/                  unit test ของ DSA
+docs/decision-log-v1.md  decision log ของงานแรก (path ในไฟล์อ้างโครงสร้างเดิม)
+```
+
+---
+
+## 8.1 ตารางส่วนร่วม
+
+> ⚠️ กรอกชื่อ/รหัส และแบ่งชิ้นงานตามที่ทำจริง — ต้องตรงกับ commit history ใน GitHub
+
+| ชื่อ-สกุล | รหัสนักศึกษา | ชิ้นงานที่รับผิดชอบ (ไฟล์ / component / route / DSA) | ช่วงที่นำเสนอในคลิป |
+|---|---|---|---|
+| _(ชื่อ 1)_ | _(รหัส)_ | **React**: `App.jsx`, `NavBar.jsx`, `Graph.js` (Graph + BFS), `useAsync.js`, `RacePage.jsx`, `TimelinePanel.jsx` | ช่วง 4 อธิบายโค้ด React |
+| _(ชื่อ 2)_ | _(รหัส)_ | **UX**: `HomePage.jsx`, `SearchBox.jsx`, `DriverPage.jsx`, `StatusViews.jsx`, `TrackMap.jsx` + `MapPlayer.js`, ตาราง Before→After | ช่วง 2 จากงานแรกสู่งานนี้, ช่วง 3 Demo |
+| _(ชื่อ 3)_ | _(รหัส)_ | **Express / DSA**: `server.js` (validate, error middleware, routes), `lib/Trie.js`, `lib/searchIndex.js`, `lib/driverStory.js`, `test/trie.test.js` | ช่วง 5 Express และ DSA |
+
+---
+
+## 8.2 ตารางข้อแนะนำจากงานแรก → สิ่งที่แก้
+
+> ⚠️ คอลัมน์ซ้ายต้องเป็น **ข้อแนะนำที่อาจารย์ให้จริง** — ด้านล่างคือสิ่งที่ปรับปรุงไปแล้วในงานนี้ ให้จับคู่กับข้อแนะนำจริง
+> (ภาพ Before ถ่ายจาก https://miniprojectnodejs.vercel.app หรือรัน repo งานแรก, ภาพ After ถ่ายจากเว็บนี้)
+
+| ข้อแนะนำจากงานแรก | สิ่งที่แก้ในงานนี้ | หลักฐาน Before / After |
 |---|---|---|
-| **Sort** (merge sort + pairwise merge, เขียนเอง) | รวมไทม์ไลน์จาก 3 endpoint, ปุ่มเรียงตามเวลา/รอบ/นักขับ, เรียงตารางผล, จัดอันดับพิทสต็อป | เรียง/สลับมุมมองได้ทันทีโดยไม่ยิง API ใหม่ |
-| **Hash Table** (chaining เขียนเอง) | lookup ข้อมูลนักขับจาก driver_number, lookup สนามจาก meeting_key, index สำหรับไฮไลต์นักขับ, จัดกลุ่มพิกัดตามนักขับ, หาการ์ดไทม์ไลน์/ตำแหน่งการ์ดตาม eventId ทุกเฟรม, ช่วงเข้าพิทของแต่ละคน | คลิกนักขับแล้วไฮไลต์ทันที และไทม์ไลน์เลื่อนตามแผนที่ได้ลื่นแม้เรซมี event หลายร้อยรายการ (บางเรซเกิน 800) |
-| **Queue** (circular buffer เขียนเอง) | rate limiter 2 ระดับ (คิว high/low) คุมไม่ให้ยิง OpenF1 เกิน 3 req/s / 30 req/min; บัฟเฟอร์ก้อนพิกัดของตัวเล่นแผนที่ (โหลดเติมท้ายคิว เล่นผ่านแล้ว dequeue หัวคิว) | ไม่โดน 429 จน error; request ที่ผู้ใช้รออยู่ไม่ติดหลังงาน background; แผนที่เล่นลื่นไม่กระตุก |
-
-เหตุผลแบบละเอียด (ก/ข/ค ตามที่ใบงานกำหนด) อยู่ใน **[docs/decision-log.md](docs/decision-log.md)**
-ทุกตัวเขียน logic เอง ไม่ใช้ `Array.prototype.sort()` / `Map` / `Set` / `array.shift()` และมี comment
-บอก time complexity ทุก method (ตรวจได้ด้วย `grep -rn "\.sort(" lib api public` — เจอแค่ใน comment)
+| _(ใส่ข้อแนะนำจริง)_ | **flow หาเรซยาว** — เดิมต้องเลือกปีจาก dropdown แล้วเลื่อนหาเรซใน dropdown ยาว ~24 รายการ (ต้องรู้ปีก่อน) → เพิ่มช่องค้นหาข้ามทุกปี (Trie ฝั่ง Express) พิมพ์ "suz" + Enter ถึงหน้าเรซ | Before: 2 dropdown (ปี → เรซ) · After: `SearchBox` autocomplete + คีย์บอร์ด ↑↓ Enter |
+| _(ใส่ข้อแนะนำจริง)_ | **โค้ด frontend เป็นไฟล์เดียว** — เดิม `public/app.js` 1,267 บรรทัด DOM + state ปนกันในไฟล์เดียว → แยกเป็น React 5 หน้า 10 component + hook + player class | Before: `public/app.js` (git history) · After: `frontend/src/` |
+| _(ใส่ข้อแนะนำจริง)_ | **แชร์/รีเฟรชแล้วหลุด** — เดิม URL เป็น `/` เสมอ รีเฟรชแล้วกลับไปเรซล่าสุด แชร์เรซที่ดูอยู่ไม่ได้ → ทุกหน้ามี URL ของตัวเอง (`/race/9496`, `/race/9496/driver/1`) | Before: URL เดียว · After: React Router + deep link |
+| _(ใส่ข้อแนะนำจริง)_ | **ดูนักขับคนเดียวยาก** — เดิมต้องกรองไทม์ไลน์แล้วนับเอง → หน้าเจาะนักขับ: ผลจบ, แซง/โดนแซง, พิทเร็วสุดอันดับเท่าไรของสนาม, คู่ปรับหลัก | Before: dropdown กรองนักขับ · After: `DriverPage` |
+| _(ใส่ข้อแนะนำจริง)_ | **Express ทำหน้าที่ไม่ชัด / error** — เดิม error handling กระจายทุก route, browser ต้องลองไฟล์เส้นสนามเองแล้วค่อยยิงอีก endpoint → `wrap()` + `ApiError` + error middleware กลาง, `/api/track` ตัดสินใจแทนใน request เดียว | Before: `api/index.js` · After: `backend/server.js` |
 
 ---
 
-## ตรงกับเกณฑ์ให้คะแนนในใบงานยังไง
+## 3.3 Component Tree และทิศทาง props
 
-| เกณฑ์ (คะแนน) | สิ่งที่มีในงาน |
+```
+<BrowserRouter>
+└─ App                                  state: recent  (เรซ/นักขับที่ดูล่าสุด)
+   ├─ NavBar        ◄─ props: graph, currentId, params, labels
+   └─ <Routes>
+      ├─ HomePage   ◄─ props: recentRace                    state: year
+      │  ├─ SearchBox    ──► callback onPick(race) ขึ้นไปหา HomePage (navigate)
+      │  │                                                   state: query, debounced, activeIndex, open
+      │  └─ RaceCard ×n  ◄─ props: race, featured
+      ├─ RacePage   ◄─ props: onVisitRace (callback ขึ้นไปหา App)
+      │  │                                                   state: currentEventId, playRequest
+      │  ├─ SummaryBar   ◄─ props: sessionKey, summary, dataAvailability
+      │  ├─ TrackMap     ◄─ props: race, timeline, playRequest
+      │  │               ──► callback onEventChange(eventId) ขึ้นไปหา RacePage
+      │  │                                                   state: status {playing, speed, statusText}
+      │  ├─ TimelinePanel◄─ props: events, drivers, currentEventId
+      │  │  │            ──► callback onSelectEvent(event) ขึ้นไปหา RacePage
+      │  │  │                                                state: sortKey, driverFilter, typeFilter, highlightedDriver
+      │  │  └─ TimelineCard ×n ◄─ props: event, isCurrent, dim, highlight
+      │  │                     ──► callback onSelect(event), onDriverClick(num)
+      │  ├─ ResultsTable ◄─ props: sessionKey, results       state: sortKey, sortAsc
+      │  └─ FastestPits  ◄─ props: sessionKey, pits
+      ├─ DriverPage ◄─ props: onVisitRace, onVisitDriver (callback ขึ้นไปหา App)
+      │  ├─ StatCard ×5   ◄─ props: label, value, sub, color
+      │  └─ TimelineCard ×n ◄─ props: event   (ใช้ component เดียวกับหน้าเรซ)
+      └─ AboutPage  ◄─ props: graph
+(ทุกหน้าใช้ Skeleton / EmptyState / ErrorState จาก StatusViews.jsx)
+```
+
+**ทำไมวาง state ไว้ตรงนั้น**
+
+- **`currentEventId` และ `playRequest` อยู่ที่ `RacePage`** — `TrackMap` เป็นคนรู้ว่าเวลาบนแผนที่ถึงเหตุการณ์ไหน แต่
+  `TimelinePanel` เป็นคนต้องไฮไลต์/เลื่อนการ์ด และกลับกัน `TimelinePanel` รู้ว่าผู้ใช้คลิกการ์ดไหน แต่ `TrackMap`
+  เป็นคนเล่น — สอง component เป็นพี่น้องกัน props ไหลลงอย่างเดียว จึงยก state ขึ้นไปที่แม่ร่วม (lifting state up)
+  แล้วให้ลูกส่งค่ากลับขึ้นมาผ่าน callback
+- **`recent` อยู่ที่ `App`** — `NavBar` ต้องรู้ว่าดูเรซไหนอยู่เพื่อสร้างลิงก์ "เรซที่ดูล่าสุด" แม้ตอนอยู่หน้าแรก/หน้าเกี่ยวกับ
+  ถ้าเก็บใน `RacePage` ค่าจะหายทันทีที่ออกจากหน้า (unmount)
+- **sort/filter อยู่ใน `TimelinePanel`, การเรียงตารางอยู่ใน `ResultsTable`** — มี component เดียวที่ใช้ ไม่ต้องยกขึ้นไป
+  ยกขึ้นไปจะทำให้ `RacePage` re-render ทั้งหน้า (รวมแผนที่) ทุกครั้งที่กดเรียง โดยไม่จำเป็น
+- **นักขับที่ดูอยู่ (`DriverPage`) ไม่ได้เป็น state เลย** — อ่านจาก URL (`useParams`) เพราะ URL คือแหล่งความจริงอยู่แล้ว
+  (แชร์ลิงก์/กด back/รีเฟรชได้) เก็บซ้ำเป็น state เสี่ยงไม่ตรงกับ URL
+
+---
+
+## 8.3 ตาราง useState
+
+| ชื่อ state | เก็บข้อมูลอะไร | อยู่ใน component | เปลี่ยนค่าเมื่อใด / โดยใคร | ทำไมต้องเป็น state |
+|---|---|---|---|---|
+| `recent` | เรซ + นักขับที่ดูล่าสุด `{ race, driver }` | `App` | `RacePage`/`DriverPage` เรียก callback `onVisitRace`/`onVisitDriver` เมื่อโหลดหัวเรื่องเรซ/นักขับสำเร็จ | NavBar ต้อง re-render เมนู/breadcrumb ตามค่านี้ และต้องอยู่ข้ามการเปลี่ยนหน้า |
+| `year` | ปีที่ผู้ใช้กดเลือก (`null` = ยังไม่เลือก) | `HomePage` | ผู้ใช้กดปุ่มปี | เปลี่ยนแล้วต้องโหลดและแสดงรายชื่อเรซชุดใหม่ (ปีที่ "แสดง" คำนวณจาก `year ?? ปีล่าสุดจาก API` ไม่เก็บซ้ำ) |
+| `query` | ข้อความในช่องค้นหา | `SearchBox` | ผู้ใช้พิมพ์ (`onChange`) | controlled input — ช่องต้องแสดงค่าที่พิมพ์ |
+| `debounced` | `query` ที่นิ่งแล้ว 250ms | `SearchBox` | effect debounce ตั้งค่าหลังหยุดพิมพ์ | เป็น dependency ของการยิง `/api/search` — ยิงตอนหยุดพิมพ์ ไม่ใช่ทุกการกดแป้น |
+| `activeIndex` | แถวผลค้นหาที่ไฮไลต์ | `SearchBox` | ผู้ใช้กด ↑↓ / เอาเมาส์ชี้, รีเซ็ตเมื่อผลชุดใหม่มา | ต้อง re-render ไฮไลต์ และ Enter ต้องรู้ว่าเลือกแถวไหน |
+| `open` | dropdown ผลค้นหาเปิดอยู่ไหม | `SearchBox` | focus/พิมพ์ = เปิด, blur/Esc/เลือกแล้ว = ปิด | ควบคุมการแสดง panel |
+| `currentEventId` | id เหตุการณ์ที่ตรงกับเวลาบนแผนที่ | `RacePage` | `TrackMap` เรียก `onEventChange` เมื่อเวลาข้ามไปเหตุการณ์ใหม่ | `TimelinePanel` ต้องไฮไลต์การ์ด + เลื่อนตาม (แชร์ระหว่างลูก 2 ตัว) |
+| `playRequest` | เหตุการณ์ที่ผู้ใช้คลิกให้เล่นบนแผนที่ `{ event }` | `RacePage` | ผู้ใช้คลิกการ์ดใน `TimelinePanel` (callback `onSelectEvent`) | `TrackMap` ต้องรู้ว่าต้องเล่น — object ใหม่ทุกคลิกจึงคลิกการ์ดเดิมซ้ำแล้วเล่นซ้ำได้ |
+| `status` | `{ playing, speed, statusText }` ของเครื่องเล่น | `TrackMap` | `MapPlayer` เรียก `onStatus` เฉพาะตอนค่าเปลี่ยน (กดเล่น/หยุด/กำลังโหลด) | ปุ่ม ▶/⏸, ปุ่มความเร็ว, ข้อความสถานะต้อง re-render (เวลา/ตำแหน่งรถที่เปลี่ยน 60 ครั้ง/วินาที **ไม่ใช่** state — ใช้ ref) |
+| `sortKey` | เรียงไทม์ไลน์แบบไหน | `TimelinePanel` | ผู้ใช้กดปุ่มเรียง | ลำดับการ์ดต้องเปลี่ยน (`visibleEvents` คำนวณด้วย `useMemo` ไม่เก็บเป็น state) |
+| `driverFilter` | นักขับที่กรอง | `TimelinePanel` | ผู้ใช้เลือก dropdown | controlled select + กรองการ์ด |
+| `typeFilter` | ประเภทเหตุการณ์ที่กรอง | `TimelinePanel` | ผู้ใช้เลือก dropdown / ปุ่ม "ล้างตัวกรอง" | controlled select + กรองการ์ด |
+| `highlightedDriver` | นักขับที่คลิกชิปเพื่อไฮไลต์ | `TimelinePanel` | ผู้ใช้คลิกชื่อย่อนักขับ (คลิกซ้ำ = ยกเลิก) | การ์ดต้องสว่าง/จางตามค่านี้ |
+| `sortKey`, `sortAsc` | คอลัมน์และทิศทางการเรียงตารางผล | `ResultsTable` | ผู้ใช้คลิกหัวคอลัมน์ | ลำดับแถวต้องเปลี่ยน |
+| `state` `{status, data, error}` | ผลการโหลดข้อมูล 4 สถานะ | `useAsync` (ทุกหน้าที่โหลดข้อมูล) | effect ตั้งเป็น loading → success/empty/error | UI ต้องแสดงสถานะครบ loading/empty/error/success |
+| `attempt` | ตัวนับการกด "ลองใหม่" | `useAsync` | ผู้ใช้กดปุ่มลองใหม่ (`reload()`) | อยู่ใน deps ของ effect → ยิงใหม่เฉพาะตอนผู้ใช้สั่ง |
+
+**ค่าที่ตั้งใจไม่เก็บเป็น state** (คำนวณจาก state/props ได้): `shownYear`, `visibleEvents`, `driverEventIndex`,
+`pathD` ของเส้นสนาม, `params`/`labels` ของ NavBar, นักขับที่ดูอยู่ (มาจาก URL) — ถ้าเก็บซ้ำต้องคอย sync ทุกครั้ง เสี่ยงข้อมูลไม่ตรงกัน
+
+---
+
+## 8.4 ตาราง useEffect
+
+| component | effect ทำอะไร | dependency array | ทำงานตอนไหน |
+|---|---|---|---|
+| `useAsync` (ใช้ในทุกหน้า) | เรียก Express ผ่าน `loader` แล้ว setState ผลลัพธ์; cleanup = `controller.abort()` | `[...deps, attempt, enabled]` | ครั้งแรกที่ mount, เมื่อ deps เปลี่ยน (เช่น `sessionKey`), หรือผู้ใช้กดลองใหม่ — **ไม่** ทำงานทุก render |
+| `App` | บันทึก `recent` ลง localStorage | `[recent]` | ทุกครั้งที่ดูเรซ/นักขับใหม่ |
+| `SearchBox` | debounce: ตั้งเวลา 250ms แล้วค่อย `setDebounced`; cleanup = `clearTimeout` | `[query]` | ทุกครั้งที่พิมพ์ (แต่ตัวเก่าถูกยกเลิก จึงยิง API จริงแค่ตอนหยุดพิมพ์) |
+| `SearchBox` | รีเซ็ตแถวที่ไฮไลต์เป็นแถวแรก | `[debounced]` | เมื่อคำค้นที่ใช้ยิงจริงเปลี่ยน |
+| `RacePage` | ล้าง `currentEventId`/`playRequest` ของเรซเก่า | `[sessionKey]` | เปลี่ยนเรซ |
+| `RacePage` | แจ้ง App ว่ากำลังดูเรซนี้ (`onVisitRace`) | `[race, onVisitRace]` | เมื่อโหลดหัวเรื่องเรซสำเร็จ |
+| `DriverPage` | แจ้ง App ว่ากำลังดูนักขับนี้ (`onVisitDriver`) | `[race, story, onVisitRace, onVisitDriver]` | เมื่อโหลดข้อมูลนักขับ/เรซสำเร็จ |
+| `TimelinePanel` | เลื่อนกล่องไทม์ไลน์ให้การ์ดปัจจุบันอยู่บนสุด | `[currentEventId]` | เมื่อเวลาบนแผนที่ข้ามไปเหตุการณ์ใหม่ (ไม่กี่วินาทีครั้ง ไม่ใช่ทุกเฟรม) |
+| `TrackMap` | สร้าง `MapPlayer` แล้ว `load()` เรซ; cleanup = `player.destroy()` (หยุด animation + ยกเลิก request) | `[track, timeline, race, sessionKey]` | เมื่อเส้นสนามโหลดเสร็จ หรือเปลี่ยนเรซ |
+| `TrackMap` | สั่ง `player.playEvent()` | `[playRequest]` | ผู้ใช้คลิกการ์ดเหตุการณ์ |
+
+**กัน loop ไม่รู้จบ / เรียก API ซ้ำโดยไม่จำเป็นอย่างไร**
+
+1. effect ใน `useAsync` setState (`status/data`) แต่ **ไม่ได้ใส่ state พวกนั้นใน deps** → setState ไม่ทำให้ effect วนกลับมา
+2. `loader` เป็นฟังก์ชันที่สร้างใหม่ทุก render จึง **ตั้งใจไม่ใส่ใน deps** (ไม่งั้นยิง API ทุก render) — ใส่เฉพาะค่าที่มีผลจริง เช่น `sessionKey`
+3. callback ที่ส่งจาก App (`onVisitRace`, `onVisitDriver`) ห่อด้วย `useCallback(..., [])` เป็นฟังก์ชันเดิมทุก render
+   → effect ของหน้าลูกที่มีมันใน deps ไม่ทำงานซ้ำ (ถ้าไม่ห่อ: ลูก setState ใน App → App re-render → ฟังก์ชันใหม่ → effect ลูกทำงานอีก → วนลูป)
+4. cleanup `abort()` — เปลี่ยนเรซระหว่างรอ คำตอบเก่าถูกยกเลิก ไม่ทับข้อมูลใหม่ (กัน race condition) และ `React.StrictMode`
+   ที่ mount 2 รอบตอน dev ก็ไม่ทำให้ข้อมูลซ้อน
+5. ค้นหาใช้ debounce + ไม่ยิงถ้าพิมพ์ไม่ถึง 2 ตัวอักษร (`enabled: false`)
+6. ชั้น cache: localStorage (เรซที่จบนานแล้วเก็บถาวร) → Express HashTable cache → CDN `Cache-Control`
+
+---
+
+## 3.4 Graph.js เชื่อมเมนูกับหน้า
+
+ไฟล์ [frontend/src/Graph.js](frontend/src/Graph.js) — เขียน Graph เอง (adjacency list เก็บใน HashTable ของเราเอง) ไม่ใช่ไลบรารีวาดกราฟ
+
+- **node = หน้า** 4 หน้า: `home` (/), `race` (/race/:sessionKey), `driver` (/race/:sessionKey/driver/:driverNumber), `about` (/about)
+- **edge = เมนูที่พาไปหน้าอื่น** (directed) 8 เส้น:
+
+| จากหน้า | เมนู (edge →) |
 |---|---|
-| UX Design (6) | เปิดมามีเรซล่าสุดโหลดไว้แล้ว, แผนที่ + ไทม์ไลน์เห็นพร้อมกันและ sync กัน, คลิกเหตุการณ์แล้วเห็นว่าเกิดตรงไหนของสนาม, เรียง/กรองทันที, skeleton/empty/error state ทุกส่วน, ใช้บนมือถือได้ |
-| DSA (3) | Sort + Hash Table + Queue เขียนเองทั้งหมด เลือกตามลักษณะข้อมูลจริง อธิบายใน Decision Log |
-| Technical Execution (2) | rate limiter + retry กัน OpenF1 ล่ม/จำกัดโควตา, cache 3 ชั้น, ไม่พังเมื่อ API ช้าหรือ fail (ส่วนอื่นยังใช้ได้) |
-| Deploy บน Vercel (2) | https://miniprojectnodejs.vercel.app — ข้อมูลใหญ่แบ่งเป็นก้อน ≤ 60 วินาที ไม่ชน limit 4.5MB/timeout |
-| Demo (2) | ดูลำดับการ demo ด้านล่าง |
+| home | → เรซที่ดูล่าสุด (race), → เกี่ยวกับ (about) |
+| race | → ค้นหาเรซอื่น (home), → เจาะนักขับ (driver), → เกี่ยวกับ (about) |
+| driver | → กลับไปดูทั้งเรซ (race), → ค้นหาเรซอื่น (home) |
+| about | → หน้าแรก (home) |
 
-GitHub มี commit history ตั้งแต่เฟส 0 ทีละขั้น (ไม่ได้ push รวดเดียว)
+**Graph ช่วยผู้ใช้อย่างไร** ([NavBar.jsx](frontend/src/components/NavBar.jsx))
 
-## ลำดับการ demo แนะนำ (5–7 นาที)
+1. **เมนูตามหน้าที่อยู่** — `graph.neighbors(currentId)` คืน edge ที่ออกจากหน้านั้น แต่ละหน้าจึงมีเมนูต่างกัน (ไม่มีรายการเมนูเขียนตายตัวในหน้า)
+2. **breadcrumb** — `graph.shortestPath("home", currentId)` ด้วย **BFS** เช่น `หน้าแรก › ดูเรซ: Japanese GP 2024 › เจาะนักขับ: VER`
+3. **เมนูที่ยังไปไม่ได้** — `graph.resolvePath()` เติม `:sessionKey` จาก URL หรือเรซที่ดูล่าสุด ถ้ายังไม่มีค่า เมนูจะจางพร้อมคำใบ้ ("เลือกนักขับจากตารางผลในหน้าเรซ")
+4. หน้า About แสดงตาราง node/edge ที่ดึงจาก `siteGraph` จริง
 
-1. **เปิดเว็บ** → ชี้ว่าไม่ต้องเลือกอะไร เรซล่าสุดโหลดไว้แล้ว (ข้อมูล → UX: ลดขั้นตอน)
-2. **กด ▶ แล้วปรับ x5/x10** → แผนที่วิ่ง ไทม์ไลน์เลื่อนตาม แถบเทาใต้ scrubber = ข้อมูลที่โหลดเก็บไว้ (Queue บัฟเฟอร์)
-3. **คลิกการ์ด "แซง"** ในไทม์ไลน์ → แผนที่เล่นช่วงนั้น นักขับที่เกี่ยวข้องสว่าง คนอื่นจาง
-4. **กดเรียงตามรอบ/นักขับ + กรองประเภท** → เปลี่ยนทันทีไม่โหลดใหม่ (merge sort ในหน่วยความจำ)
-5. **คลิกชื่อนักขับ** ในการ์ด → ไฮไลต์ทุกเหตุการณ์ของคนนั้น (Hash Table ตอบ O(1) ต่อการ์ด)
-6. **เปลี่ยนปีเป็น 2023 แล้วเลือก "Bahrain Grand Prix — Race"** → เรซนี้ OpenF1 ไม่มีข้อมูลพิท จะขึ้น
-   empty state "ไม่มีข้อมูลการเข้าพิท" และแถบสรุปขึ้น "ไม่มีข้อมูล" ชัดเจน ส่วนอื่นยังใช้ได้ ไม่พัง
-7. **เปิด Decision Log** อธิบายเส้นทาง ข้อมูล → DSA → UX ของแต่ละตัว
+**Big-O**: `neighbors` = O(deg(v)), `shortestPath` (BFS) = O(V + E) — เลือก adjacency list แทน matrix เพราะกราฟเบาบาง
+(memory O(V+E) แทน O(V²)) และเลือก BFS แทน DFS เพราะทุก edge มีน้ำหนักเท่ากัน (1 คลิก) BFS รับประกันว่าเจอเส้นทางสั้นสุดก่อน
 
 ---
 
-## Tech Stack
-
-- **Backend**: Node.js + Express (ES modules), deploy เป็น Vercel serverless function เดียว
-- **Frontend**: Vanilla HTML/CSS/JS ล้วน ไม่มี framework/build step
-- **ข้อมูล**: [OpenF1 API](https://openf1.org) — ไม่ต้องใช้ API key, ข้อมูลย้อนหลังปี 2023 เป็นต้นไป
-- ไม่มี database, ไม่มีระบบ login
-
-## รันเองเครื่อง local
-
-```bash
-npm install
-npm run dev          # เปิด http://localhost:3000
-npm test             # เทส DSA (sort/hash/queue) 24 เคส + rate limiter 5 เคส
-node scripts/build-track.js <sessionKey>
-                     # (ไม่บังคับ) precompute เส้นสนามให้โหลดเร็ว — ถ้าไม่รัน เว็บจะสร้างสดให้เองตอนเปิดเรซ
-```
-
-Deploy ขึ้น Vercel (ใช้ `vercel.json` ที่มีอยู่ — ทั้งแอปเป็น serverless function เดียวคือ `api/index.js`):
-
-```bash
-npx vercel --prod
-```
-
-## โครงสร้างไฟล์หลัก
+## Express มีหน้าที่จริงอะไรบ้าง
 
 ```
-api/index.js          Express app + routes (/api/years, /api/races, /api/race/:key, /api/positions/:key, /api/track/:key)
-lib/sort.js           merge sort + pairwise merge (เขียนเอง)
-lib/HashTable.js       hash table แบบ chaining (เขียนเอง)
-lib/Queue.js           circular buffer queue (เขียนเอง)
-lib/rateLimiter.js     ใช้ Queue 2 ระดับคุม rate limit การเรียก OpenF1
-lib/openf1.js          client เรียก OpenF1 + cache (มีวันหมดอายุ) + retry
-lib/timeline.js        รวม event หลาย endpoint เป็นไทม์ไลน์เดียว
-lib/track.js           normalize พิกัดดิบเป็นพิกัด SVG
-lib/trackBuilder.js    หา 1 รอบสนามจากพิกัดดิบ + สร้างเส้นสนามอัตโนมัติ (ใช้ทั้งสคริปต์และ /api/track)
-lib/positions.js       จัดกลุ่ม+downsample พิกัดรถสำหรับแผนที่
-public/                หน้าเว็บ (index.html, app.js, style.css)
-public/tracks/*.json   เส้นสนามที่ precompute ไว้ล่วงหน้า (26 สนาม ปี 2023–2026)
-scripts/build-track.js สคริปต์ precompute เส้นสนาม (ไม่บังคับ)
-scripts/probe-api.mjs  สคริปต์เฟส 0 สำรวจ API จริง
-test/dsa.test.js       เทส sort/hash/queue รวมเคส collision, queue เต็ม/ว่าง, wrap-around
-test/rateLimiter.test.js เทสลำดับ high/low, ยกเลิกงาน, ไม่เกินโควตา
-docs/decision-log.md   Decision Log ตอบ 3 ข้อบังคับของใบงาน
+React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► api.openf1.org
+                                  │
+                                  ├─ proxy + rate limit   คิวกลาง 2 ระดับ 3 req/s, 30 req/min (OpenF1 จำกัดต่อ IP)
+                                  ├─ cache                HashTable module-scope + Cache-Control ให้ CDN
+                                  ├─ validate             year / sessionKey / driverNumber / ช่วงเวลา / คำค้น → 400
+                                  ├─ ประมวลผล             รวม 5 endpoint เป็นไทม์ไลน์ (merge sort), Trie ค้นหา,
+                                  │                       สรุปนักขับ, สร้างเส้นสนามจาก GPS
+                                  └─ error middleware     OpenF1 ล่ม → 502 + ข้อความภาษาไทย, server ไม่ล่ม
 ```
 
-## ข้อจำกัดที่ทราบอยู่แล้ว (ตามที่ใบงานเตือนไว้)
+| Route | หน้าที่ |
+|---|---|
+| `GET /api/health` | เช็คว่า backend ทำงาน (หน้า About ใช้) |
+| `GET /api/years` | ปีที่เลือกได้ (2023 → ปีปัจจุบัน คำนวณจากวันที่) |
+| `GET /api/races?year=` | เรซที่แข่งจบแล้วของปีนั้น (validate ปี) |
+| `GET /api/search?q=` | **ใหม่** ค้นหาเรซข้ามทุกปีด้วย Trie |
+| `GET /api/race/:key/info` | **ใหม่** หัวเรื่องเรซ (ให้ deep link/รีเฟรชรู้ว่าเป็นเรซอะไร) |
+| `GET /api/race/:key` | ไทม์ไลน์ + ผลจบ + พิทเร็วสุด + สรุป |
+| `GET /api/race/:key/driver/:num` | **ใหม่** เรื่องราวนักขับ (ส่งเฉพาะ event ของคนนั้น) |
+| `GET /api/track/:key` | **ปรับ** เส้นสนาม: ไฟล์ precompute ถ้ามี ไม่งั้นสร้างสด — ใน request เดียว |
+| `GET /api/positions/:key?from=&to=` | พิกัดรถช่วง ≤ 60 วินาที (downsample, ยกเลิกได้, priority ต่ำถ้าเป็น prefetch) |
 
-- Vercel รัน Express แบบ serverless — ตัวแปรใน memory (cache, rate limiter state) อาจรีเซ็ตข้าม request
-  จึงมี retry-with-backoff กันเผื่อเจอ 429 จาก jitter ของ rate limit ที่แชร์กับผู้ใช้คนอื่นทั่วโลก
-- แสดงได้เฉพาะข้อมูลย้อนหลัง (REPLAY) ไม่ใช่ข้อมูลสด เพราะ live data ของ OpenF1 เป็นบริการเสียเงิน
-  เรซที่เพิ่งจบไม่กี่ชั่วโมงอาจยังมีข้อมูลไม่ครบจากฝั่ง OpenF1 (เว็บไม่ cache ถาวรจนผ่านไป 1 วัน)
-- OpenF1 ให้โควตาฟรีแค่ 30 request/นาที ถ้าเปิดเรซใหม่ที่ไม่เคยมีใครเปิดหลาย ๆ เรซติดกันในนาทีเดียว
-  อาจต้องรอบ้าง (เรซที่เคยเปิดแล้วจะตอบจาก cache ของ CDN ทันที)
-- ถ้าสร้างเส้นสนามของสนามใหม่ไม่สำเร็จ (เช่นข้อมูลพิกัดยังไม่มา) จะขึ้น empty state "ยังไม่มีข้อมูลแผนที่
-  สนามนี้" แทนที่จะพัง ไทม์ไลน์และผลการแข่งยังใช้ได้ตามปกติ
+**API error ไม่ทำให้ระบบล่ม**: ทุก route ห่อด้วย `wrap()` ส่ง error ไปที่ error middleware ตัวเดียว ฝั่ง React ทุกการโหลดผ่าน
+`useAsync` ที่จับ error แล้วแสดง `ErrorState` + ปุ่มลองใหม่ (ทดสอบแล้วโดยปิด backend ระหว่างใช้งาน — หน้าเว็บแสดง
+"ติดต่อ backend ไม่ได้" ไม่พัง และใช้งานต่อได้เมื่อเปิด backend กลับมา)
+
+---
+
+## 4. DSA เชิงลึก
+
+| DSA | อยู่ฝั่ง | ใช้ตรงไหน (ผลต่อ UX) | Big-O / เทียบก่อน-หลัง |
+|---|---|---|---|
+| **Graph + BFS** | React | สร้างเมนู + breadcrumb ([Graph.js](frontend/src/Graph.js)) | neighbors O(deg), BFS O(V+E) |
+| **Trie** (ใหม่) | Express | ค้นหาเรซแบบ autocomplete ข้ามทุกปี ([Trie.js](backend/lib/Trie.js)) | ดูด้านล่าง |
+| **Merge sort** | ทั้งสองฝั่ง | รวม 3 แหล่ง event เป็นไทม์ไลน์ (server), เรียงไทม์ไลน์/ตาราง/ผลค้นหาทันทีโดยไม่ยิง API (client) | O(n log n), merge 2 ชุดที่เรียงแล้ว O(n+m) |
+| **HashTable** (chaining) | ทั้งสองฝั่ง | lookup นักขับ/meeting, cache, children ของ Trie node, ไฮไลต์นักขับ O(1) ต่อการ์ด | O(1) เฉลี่ย แทน `.find()` O(n) |
+| **Queue** (circular buffer) | ทั้งสองฝั่ง | คิว rate limiter (server), บัฟเฟอร์ก้อนพิกัดรถ (client), คิวของ BFS | enqueue/dequeue O(1) แทน `shift()` O(n) |
+| **Binary search** | React | หาเหตุการณ์ปัจจุบันตามเวลาแผนที่ทุกเฟรม, หาตำแหน่งรถระหว่าง 2 จุด | O(log n) ต่อเฟรม แทน O(n) |
+
+### Trie — ทำไม และเทียบก่อน-หลัง
+
+- **ก่อน (งานแรก)**: ผู้ใช้ต้องรู้ปีก่อน เลือกปี → เปิด dropdown เรซ ~24 รายการ → เลื่อนหา (3–4 การกระทำ ข้ามปีไม่ได้)
+- **หลัง**: พิมพ์ "suz" → เห็น Suzuka ทุกปี → Enter (คำค้นหลายคำได้ เช่น `las 2024`, ไม่สนตัวพิมพ์/เครื่องหมาย `são` = `sao`)
+- **ถ้าค้นแบบ linear** (วนทุกเรซแล้ว `.includes()`): O(N × L) ต่อการค้น 1 ครั้ง (N = เรซทุกปี ~100+, L = ความยาวข้อความ)
+- **Trie**: เดินตามตัวอักษรของคำค้น O(P) แล้วอ่านรายการ id ที่ node นั้นเก็บไว้ล่วงหน้า O(k) — ไม่ขึ้นกับ N
+  หลายคำ intersect ด้วย HashTable นับจำนวนคำที่ตรง เริ่มจากคำที่ผลน้อยสุด
+- **แลกกับ**: memory O(จำนวนตัวอักษรรวมของทุกคำ) + เวลาสร้างครั้งเดียว ~ms (ดึงรายชื่อเรซ 4 ปีครั้งแรก ~3 วินาที แล้ว cache 10 นาที — วัดจริง: ค้นครั้งแรก 2959ms, ครั้งต่อไป 0ms)
+- **ทำไมฝั่ง Express**: ต้องใช้รายชื่อเรซทุกปี (8 request ไป OpenF1) — ทำที่ server ครั้งเดียวแชร์ให้ผู้ใช้ทุกคน ดีกว่าให้ทุก browser โหลดเองแล้วสร้าง Trie เอง
+- **ทำไมไม่ใช้วิธีอื่น**: sorted array + binary search หา prefix ได้ O(P log N) แต่ต้องทำต่อคำ และค้น "คำที่อยู่กลางชื่อ" (เช่น "vegas" ใน "Las Vegas Grand Prix") ต้องเก็บทุกคำแยกอยู่ดี — Trie ตอบโจทย์ prefix ตรงตัวกว่า
+
+### Driver story — ประมวลผลที่ Express
+
+[backend/lib/driverStory.js](backend/lib/driverStory.js) วนไทม์ไลน์ครั้งเดียว O(E) นับแซง/โดนแซง, HashTable นับคู่ปรับ,
+หาอันดับพิทจากลิสต์ที่ mergeSort ไว้แล้ว O(P) — ส่งเฉพาะ event ของนักขับคนนั้น (~10–60 รายการ) แทนทั้งไทม์ไลน์ (~300–700)
+
+---
+
+## 2.3 flow หลักสั้นลงอย่างไร
+
+| งาน | งานแรก | งานนี้ |
+|---|---|---|
+| ดูเรซที่รู้ชื่อสนาม | เลือกปี → เปิด dropdown → เลื่อนหา → เลือก (4) | พิมพ์ 3 ตัว → Enter (2) |
+| กลับมาดูเรซเดิม | เลือกปี → หาเรซใหม่ | การ์ด "ดูต่อจากครั้งก่อน" / เมนู "เรซที่ดูล่าสุด" (1) หรือเปิดลิงก์เดิม |
+| ดูผลงานนักขับคนเดียว | เลือก dropdown นักขับ → ไล่อ่าน/นับเอง | คลิกชื่อในตารางผล (1) → เห็นสรุปทันที |
+| แชร์เรซให้เพื่อน | ทำไม่ได้ (URL เดียว) | คัดลอก URL |
+
+## สถานะ loading / empty / error / success
+
+ทุกจุดที่โหลดข้อมูลใช้ `useAsync` + `StatusViews` ชุดเดียวกัน: skeleton ระหว่างโหลด, empty state ที่บอกเหตุผลและสิ่งที่ทำต่อได้
+(เช่น "ไม่มีเหตุการณ์ตามตัวกรองนี้" + ปุ่มล้างตัวกรอง), error state ที่แสดงข้อความจาก server + ปุ่มลองใหม่ (ซ่อนปุ่มถ้าเป็น 404),
+และหน้า "ไม่พบเรซนี้" สำหรับลิงก์ผิด
+
+## ข้อจำกัด / สิ่งที่จะทำต่อ
+
+- OpenF1 จำกัด 30 req/นาที — เล่นแผนที่ความเร็ว x10 นาน ๆ อาจต้องรอโหลด (ตัวเล่นหยุดรอแทนการกระตุก)
+- ปี 2023 OpenF1 ไม่มีข้อมูลการแซง หน้าเจาะนักขับจึงมีข้อมูลน้อยกว่า
+- ดัชนีค้นหาสร้างใน memory ของ instance — บน serverless จะสร้างใหม่ทุกครั้งที่ instance เย็นลง
+- ถัดไป: เทียบนักขับ 2 คนในหน้าเดียว, deploy frontend + backend บน Vercel
