@@ -13,7 +13,7 @@ import express from "express";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { getLocation, getSessionInfo } from "./lib/openf1.js";
+import { getLocation, getSessionInfo, requestContext, getOpenF1Status } from "./lib/openf1.js";
 import { buildTimeline } from "./lib/timeline.js";
 import { buildPositionsResponse } from "./lib/positions.js";
 import { buildTrackAuto } from "./lib/trackBuilder.js";
@@ -66,11 +66,35 @@ app.use((req, res, next) => {
   next();
 });
 
+// context ต่อ request: ถ้าระหว่างตอบต้องใช้ข้อมูลสำรอง (OpenF1 ปิด/ล่ม) lib/openf1.js จะจดเวลาไว้ใน store
+// แล้วตอนส่ง JSON เราแนบ header X-Data-Saved-At ให้หน้าเว็บแสดงป้าย และห้าม CDN/browser cache คำตอบสำรองนี้
+app.use((req, res, next) => {
+  const store = { staleSince: null };
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (store.staleSince) {
+      res.set("X-Data-Saved-At", store.staleSince);
+      res.set("Cache-Control", "no-store");
+    }
+    return originalJson(body);
+  };
+  requestContext.run(store, next);
+});
+
 // ---------- routes ----------
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
 });
+
+// สถานะ OpenF1 ตอนนี้ — หน้าเว็บถามทุก 1 นาทีเพื่อแสดง/ซ่อนแถบแจ้งเตือน "มีแข่งสด OpenF1 ปิดชั่วคราว"
+app.get(
+  "/api/status",
+  wrap(async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(await getOpenF1Status());
+  })
+);
 
 app.get("/api/years", (req, res) => {
   setCdnCache(res, 3600);

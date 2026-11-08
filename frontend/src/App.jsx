@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Routes, Route, useLocation, matchPath } from "react-router-dom";
 import { siteGraph } from "./Graph.js";
 import NavBar from "./components/NavBar.jsx";
+import StatusBanner from "./components/StatusBanner.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import RacePage from "./pages/RacePage.jsx";
 import DriverPage from "./pages/DriverPage.jsx";
@@ -75,6 +76,7 @@ export default function App() {
   return (
     <>
       <NavBar graph={siteGraph} currentId={current.id} params={params} labels={labels} />
+      <StatusBanner />
       <main>
         <Routes>
           <Route path="/" element={<HomePage recentRace={recent?.race ?? null} />} />

@@ -9,7 +9,7 @@
     "start": "node --env-file-if-exists=.env server.js",
     "probe": "node scripts/probe-api.mjs",
     "build-track": "node scripts/build-track.js",
-    "test": "node test/dsa.test.js && node test/rateLimiter.test.js && node test/trie.test.js && node test/standings.test.js && node test/youtube.test.js"
+    "test": "node test/dsa.test.js && node test/rateLimiter.test.js && node test/trie.test.js && node test/standings.test.js && node test/youtube.test.js && node test/stale.test.js"
   },
   "engines": {
     "node": ">=22"

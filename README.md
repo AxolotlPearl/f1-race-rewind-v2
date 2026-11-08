@@ -121,6 +121,7 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 <BrowserRouter>
 └─ App                                  state: recent  (เรซ/นักขับที่ดูล่าสุด)
    ├─ NavBar        ◄─ props: graph, currentId, params, labels
+   ├─ StatusBanner  (ไม่มี props — ฟัง event จาก api.js)          state: status, savedAt, dismissed
    └─ <Routes>
       ├─ HomePage   ◄─ props: recentRace                    state: year, showPast
       │  ├─ NextRaceCountdown ◄─ props: next ──► callback onFinished() (เรซจบ → แม่โหลดปฏิทินใหม่)   state: now
@@ -189,6 +190,9 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 |---|---|---|---|---|
 | `recent` | เรซ + นักขับที่ดูล่าสุด `{ race, driver }` | `App` | `RacePage`/`DriverPage` เรียก callback `onVisitRace`/`onVisitDriver` เมื่อโหลดหัวเรื่องเรซ/นักขับสำเร็จ | NavBar ต้อง re-render เมนู/breadcrumb ตามค่านี้ และต้องอยู่ข้ามการเปลี่ยนหน้า |
 | `year` | ปีที่ผู้ใช้กดเลือก (`null` = ยังไม่เลือก) | `HomePage` | ผู้ใช้กดปุ่มปี | เปลี่ยนแล้วต้องโหลดและแสดงรายชื่อเรซชุดใหม่ (ปีที่ "แสดง" คำนวณจาก `year ?? ปีล่าสุดจาก API` ไม่เก็บซ้ำ) |
+| `status` | สถานะ OpenF1 จาก `/api/status` | `StatusBanner` | เช็คทุก 1 นาที + ทันทีเมื่อ request ใดได้ 503 | เลือกว่าจะแสดงแถบแบบไหน/ซ่อน |
+| `savedAt` | เวลาบันทึกของข้อมูลสำรองที่เก่าที่สุดที่หน้าเว็บได้รับ | `StatusBanner` | event `stale` จาก `api.js` (header `X-Data-Saved-At`), ล้างเมื่อ OpenF1 กลับมา | แสดง "📦 ข้อมูลที่บันทึกไว้เมื่อ …" |
+| `dismissed` | ผู้ใช้กดปิดแถบแล้ว | `StatusBanner` | ปุ่ม ✕ / รีเซ็ตเมื่อสถานะเปลี่ยน | ซ่อนแถบ แต่เด้งกลับถ้าสถานะเปลี่ยน |
 | `showPast` | ปฏิทินแสดงทั้งฤดูกาลหรือเฉพาะสนามที่ยังไม่แข่ง | `HomePage` | ผู้ใช้กดปุ่ม "แสดงทั้งฤดูกาล" | รายการในปฏิทินต้องเปลี่ยน (ค่าเริ่มต้นย่อ ให้หน้าแรกสั้น) |
 | `now` | เวลาปัจจุบัน (ms) | `NextRaceCountdown` | `setInterval` ทุก 1 วินาที | ตัวเลขนับถอยหลังต้อง re-render ทุกวินาที ("เหลืออีกเท่าไร" คำนวณจาก now จึงไม่เก็บซ้ำ) |
 | `view` (sidebar) | แท็บนักแข่ง/ทีมของแถบขวาหน้าแรก | `StandingsSidebar` | ผู้ใช้กดแท็บ | สลับรายการที่แสดง — ใช้แค่ในแถบนี้ จึงไม่ยกขึ้นไป |
@@ -223,6 +227,9 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | component | effect ทำอะไร | dependency array | ทำงานตอนไหน |
 |---|---|---|---|
 | `useAsync` (ใช้ในทุกหน้า) | เรียก Express ผ่าน `loader` แล้ว setState ผลลัพธ์; cleanup = `controller.abort()` | `[...deps, attempt, enabled]` | ครั้งแรกที่ mount, เมื่อ deps เปลี่ยน (เช่น `sessionKey`), หรือผู้ใช้กดลองใหม่ — **ไม่** ทำงานทุก render |
+| `StatusBanner` | เช็ค `/api/status` ตอนเปิดเว็บ + ทุก 1 นาที; cleanup = `clearInterval` | `[refresh]` (`useCallback` จึงตั้งครั้งเดียว) | mount |
+| `StatusBanner` | subscribe event จาก `api.js` (ได้ข้อมูลสำรอง / เจอ 503); cleanup = ยกเลิก subscribe | `[refresh]` | mount |
+| `StatusBanner` | สถานะเปลี่ยน → แสดงแถบอีกครั้งแม้เคยกดปิด | `[state]` | เมื่อสถานะ OpenF1 เปลี่ยน |
 | `NextRaceCountdown` | ตั้ง `setInterval` เดินนาฬิกาทุก 1 วินาที; cleanup = `clearInterval` | `[]` | ครั้งเดียวตอน mount (ถ้าใส่ `now` ใน deps จะสร้าง timer ใหม่ซ้อนทุกวินาที) |
 | `NextRaceCountdown` | เรซจบระหว่างเปิดหน้า → เรียก `onFinished` ให้แม่โหลดปฏิทินใหม่ | `[isOver, onFinished]` (`onFinished` = `reload` ของ useAsync ที่ห่อ `useCallback` แล้ว) | ตอน `isOver` เปลี่ยนเป็น true |
 | `App` | บันทึก `recent` ลง localStorage | `[recent]` | ทุกครั้งที่ดูเรซ/นักขับใหม่ |
@@ -299,6 +306,7 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | Route | หน้าที่ |
 |---|---|
 | `GET /api/health` | เช็คว่า backend ทำงาน (หน้า About ใช้) |
+| `GET /api/status` | **ใหม่** สถานะ OpenF1 (`ok` / `locked` ช่วงแข่งสด / `down`) + จำนวนข้อมูลสำรอง — แถบแจ้งเตือนใช้ |
 | `GET /api/years` | ปีที่เลือกได้ (2023 → ปีปัจจุบัน คำนวณจากวันที่) |
 | `GET /api/races?year=` | เรซที่แข่งจบแล้วของปีนั้น (validate ปี) |
 | `GET /api/search?q=` | **ใหม่** ค้นหาเรซข้ามทุกปีด้วย Trie |
@@ -374,7 +382,13 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 
 1. **stale-on-error**: ทุกคำตอบที่สำเร็จถูกเก็บลงดิสก์ (`backend/.cache/`, ไม่ขึ้น git) ถ้ายิงจริงไม่สำเร็จ ใช้ข้อมูลล่าสุดที่เคยได้แทน — ข้อมูลเรซที่จบแล้วไม่เปลี่ยน จึงยังถูกต้อง
 2. **circuit breaker**: เจอ "ปิดช่วงแข่งสด" ครั้งแรกแล้ว 60 วินาทีถัดไปไม่ยิง OpenF1 เลย (เดิมแต่ละ request รอคิว rate limit แล้วโดน 401 อยู่ดี หน้าเว็บค้าง ~48 วินาที → ตอบทันที)
-3. **ข้อความที่ตรงสาเหตุ**: ไม่มีข้อมูลสำรอง → ตอบ 503 "ตอนนี้มีการแข่ง F1 สดอยู่ OpenF1 จึงปิดการเข้าถึงชั่วคราว — ลองใหม่หลังจบเซสชัน" แทน "เรียกข้อมูลไม่สำเร็จ"
+3. **บอกผู้ใช้ทุกหน้า** (`StatusBanner`): หน้าเว็บถาม `/api/status` ทุก 1 นาที — OpenF1 ปิดช่วงแข่งสด → แถบแดงด้านบน
+   บอกสาเหตุและจำนวนข้อมูลที่บันทึกไว้, ติดต่อไม่ได้ → แถบส้ม, OpenF1 กลับมา → แถบหายเอง
+   และถ้าคำตอบใดใช้ข้อมูลสำรอง Express แนบ header `X-Data-Saved-At` (ผ่าน `AsyncLocalStorage` ต่อ request) หน้าเว็บแสดง
+   "📦 ข้อมูลบางส่วนเป็นข้อมูลที่บันทึกไว้เมื่อ …" และคำตอบนั้นตั้ง `Cache-Control: no-store` ไม่ให้ข้อมูลสำรองค้างใน cache
+4. **ข้อความที่ตรงสาเหตุ**: ไม่มีข้อมูลสำรอง → ตอบ 503 "ตอนนี้มีการแข่ง F1 สดอยู่ OpenF1 จึงปิดการเข้าถึงชั่วคราว — ลองใหม่หลังจบเซสชัน" แทน "เรียกข้อมูลไม่สำเร็จ"
+
+**ข้อมูลสำรองไม่ต้องเก็บใหม่ทุกครั้ง**: ไฟล์ใน `backend/.cache/` อยู่ถาวรข้ามการรีสตาร์ท backend (ลบเองได้ถ้าต้องการเริ่มใหม่) — เก็บเฉพาะข้อมูลที่เคยโหลดสำเร็จอย่างน้อยหนึ่งครั้ง
 
 **เคล็ดลับก่อนอัดคลิป**: เปิดเรซที่จะ demo ไว้ก่อนสักครั้ง (ตอนไม่มีแข่งสด) ข้อมูลจะถูกเก็บลงดิสก์ แล้ว demo ได้แม้ OpenF1 ปิด
 

@@ -8,7 +8,8 @@
 import { rateLimiter } from "./rateLimiter.js";
 import { HashTable } from "./HashTable.js";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,6 +38,25 @@ function diskSet(apiPath, data) {
     .then(() => writeFile(diskFile(apiPath), JSON.stringify({ path: apiPath, savedAt: new Date().toISOString(), data })))
     .catch(() => {});
 }
+
+// ---------- บอกหน้าเว็บว่า "คำตอบนี้ใช้ข้อมูลสำรอง" ----------
+// server.js เปิด context ต่อ request ด้วย AsyncLocalStorage ({ staleSince }) — ถ้าระหว่างตอบ request นั้นต้องใช้ข้อมูลสำรอง
+// จะจดเวลาที่บันทึกข้อมูลสำรองไว้ แล้ว server.js ใส่ header X-Data-Saved-At ให้หน้าเว็บแสดงป้าย "ข้อมูลที่บันทึกไว้เมื่อ ..."
+// (ไม่ต้องส่งค่าผ่านทุกฟังก์ชันตั้งแต่ route ลงมาถึงตรงนี้)
+export const requestContext = new AsyncLocalStorage();
+
+function markStale(savedAt) {
+  const store = requestContext.getStore();
+  if (!store) return;
+  if (!store.staleSince || savedAt < store.staleSince) store.staleSince = savedAt;
+}
+
+// ---------- สถานะ OpenF1 ล่าสุด (หน้าเว็บถาม /api/status เพื่อแสดงแถบแจ้งเตือน) ----------
+let lastSuccessAt = 0;
+let lastLockoutAt = 0;
+let lastFailureAt = 0;
+let lastProbeAt = 0;
+const STATUS_FRESH_MS = 60 * 1000;
 
 // circuit breaker: เจอ "ปิดช่วงแข่งสด" แล้ว ไม่ต้องยิงซ้ำทุก request (แต่ละตัวต้องรอคิว rate limit แล้วโดน 401 อยู่ดี
 // ทำให้หน้าเว็บค้างนาน) — 60 วินาทีถัดไปตอบจากสำรอง/แจ้ง lockout ทันที แล้วค่อยลองยิงจริงอีกครั้ง
@@ -77,26 +97,69 @@ function isCurrentOrFutureSeason(year) {
 async function fetchOpenF1(path, { ttlMs = Infinity, useCache = true, priority = "high", isCancelled } = {}) {
   // ไม่ลบ entry ที่หมดอายุทิ้ง — เก็บไว้เป็นสำรองถ้ายิงใหม่ไม่สำเร็จ
   const memEntry = useCache ? cache.get(path) : undefined;
-  if (memEntry && memEntry.expiresAt > Date.now()) return memEntry.data;
+  if (memEntry && memEntry.expiresAt > Date.now()) return memEntry.data; // ยังไม่หมดอายุ = ข้อมูลปกติ ไม่ใช่สำรอง
 
   let data;
   try {
     if (Date.now() < lockoutUntil) throw new OpenF1Error(401, path, "Live F1 session in progress (paused locally)");
     data = await requestOpenF1(path, { priority, isCancelled });
+    lastSuccessAt = Date.now();
   } catch (err) {
-    if (err.liveLockout && Date.now() >= lockoutUntil) lockoutUntil = Date.now() + LOCKOUT_PAUSE_MS;
-    if (err.name === "AbortError" || !useCache) throw err;
+    if (err.name === "AbortError") throw err;
+    if (err.liveLockout) {
+      lastLockoutAt = Date.now();
+      if (Date.now() >= lockoutUntil) lockoutUntil = Date.now() + LOCKOUT_PAUSE_MS;
+    } else lastFailureAt = Date.now();
+    if (!useCache) throw err;
     const stale = memEntry ?? (await diskGet(path));
     if (!stale) throw err;
-    console.warn(`[openf1] ใช้ข้อมูลสำรองของ ${path} (${err.status ?? err.message})`);
+    markStale(stale.savedAt);
     return stale.data;
   }
 
   if (useCache) {
-    cache.set(path, { data, expiresAt: Date.now() + ttlMs });
+    const savedAt = new Date().toISOString();
+    cache.set(path, { data, savedAt, expiresAt: Date.now() + ttlMs });
     diskSet(path, data);
   }
   return data;
+}
+
+/**
+ * getOpenF1Status - "ok" | "locked" (ปิดช่วงแข่งสด) | "down" (ล่ม/เน็ตหลุด) + จำนวนข้อมูลสำรองบนดิสก์
+ * ใช้ผลจาก request จริงล่าสุดก่อน ถ้าไม่มีสัญญาณใหม่เกิน 60 วินาที ค่อยยิงเช็คเบา ๆ 1 ครั้ง (จำกัดไม่เกินนาทีละครั้ง)
+ */
+export async function getOpenF1Status() {
+  const now = Date.now();
+  const latestSignal = Math.max(lastSuccessAt, lastLockoutAt, lastFailureAt);
+  if (now - latestSignal > STATUS_FRESH_MS && now - lastProbeAt > STATUS_FRESH_MS && now >= lockoutUntil) {
+    lastProbeAt = now;
+    try {
+      await requestOpenF1("/sessions?session_key=latest", { priority: "low" });
+      lastSuccessAt = Date.now();
+    } catch (err) {
+      if (err.liveLockout) {
+        lastLockoutAt = Date.now();
+        lockoutUntil = Date.now() + LOCKOUT_PAUSE_MS;
+      } else lastFailureAt = Date.now();
+    }
+  }
+
+  let state = "ok";
+  if (lastLockoutAt > lastSuccessAt) state = "locked";
+  else if (lastFailureAt > lastSuccessAt) state = "down";
+
+  let savedEntries = 0;
+  try {
+    savedEntries = (await readdir(DISK_DIR)).length;
+  } catch {
+    savedEntries = 0;
+  }
+  return {
+    openf1: state,
+    lastSuccessAt: lastSuccessAt ? new Date(lastSuccessAt).toISOString() : null,
+    savedEntries,
+  };
 }
 
 function requestOpenF1(path, { priority, isCancelled }) {

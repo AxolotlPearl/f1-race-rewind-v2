@@ -33,6 +33,23 @@ export class ApiError extends Error {
   }
 }
 
+// ---------- แจ้ง StatusBanner เมื่อได้ "ข้อมูลสำรอง" หรือเจอ OpenF1 ปิด ----------
+// ใช้ observer แบบง่าย: component ที่สนใจ subscribe แล้วได้ event ทุกครั้งที่มีคำตอบแบบนี้ (ไม่ต้องส่ง props ผ่านทุกหน้า)
+const listeners = [];
+
+/** subscribeApiEvents - คืนฟังก์ชันยกเลิก (ใช้เป็น cleanup ของ useEffect ได้ตรง ๆ) */
+export function subscribeApiEvents(listener) {
+  listeners.push(listener);
+  return () => {
+    const i = listeners.indexOf(listener);
+    if (i >= 0) listeners.splice(i, 1);
+  };
+}
+
+function emit(event) {
+  for (const listener of listeners.slice()) listener(event);
+}
+
 export async function fetchJson(url, { signal, headers } = {}) {
   let res;
   try {
@@ -43,10 +60,14 @@ export async function fetchJson(url, { signal, headers } = {}) {
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 503) emit({ type: "lockout" }); // OpenF1 ปิดช่วงแข่งสด และไม่มีข้อมูลสำรองของ request นี้
     // ไม่มีข้อความจาก Express เลย + status 5xx = ไม่ได้คุยกับ Express ของเรา (backend ดับ/proxy ต่อไม่ติด)
     const fallback = res.status >= 500 ? "ติดต่อ backend ไม่ได้ — ระบบอาจปิดอยู่ ลองใหม่อีกครั้ง" : `เซิร์ฟเวอร์ตอบกลับผิดพลาด (HTTP ${res.status})`;
     throw new ApiError(body.error || fallback, res.status);
   }
+  // server ใช้ข้อมูลสำรองตอบ (OpenF1 ปิด/ล่ม) → บอกแถบสถานะว่าข้อมูลบนจอบันทึกไว้เมื่อไหร่
+  const savedAt = res.headers.get("X-Data-Saved-At");
+  if (savedAt) emit({ type: "stale", savedAt });
   return res.json();
 }
 
@@ -87,6 +108,7 @@ export const api = {
     cached(`driver:${sessionKey}:${driverNumber}`, DAY_MS, `/api/race/${sessionKey}/driver/${driverNumber}`, signal),
   track: (sessionKey, signal) => fetchJson(`/api/track/${sessionKey}`, { signal }),
   health: (signal) => fetchJson("/api/health", { signal }),
+  status: (signal) => fetchJson("/api/status", { signal }),
   positions: (sessionKey, fromMs, toMs, { signal, prefetch = false } = {}) => {
     // ขอบเวลาถูกจัดให้ตรง "ตาราง" เสมอ (ดู CHUNK_MS ใน MapPlayer) URL ซ้ำได้ → CDN/cache ตอบได้
     const from = encodeURIComponent(new Date(fromMs).toISOString());
