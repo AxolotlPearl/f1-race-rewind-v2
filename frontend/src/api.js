@@ -68,6 +68,17 @@ export const api = {
   races: (year, signal) => cached(`races:${year}`, isCurrentSeason(year) ? 10 * MINUTE_MS : Infinity, `/api/races?year=${year}`, signal),
   search: (q, signal) => fetchJson(`/api/search?q=${encodeURIComponent(q)}&limit=8`, { signal }),
   standings: (year, signal) => cached(`standings:${year}`, isCurrentSeason(year) ? 10 * MINUTE_MS : Infinity, `/api/standings?year=${year}`, signal),
+  // ปฏิทิน: ไม่ cache ใน localStorage — สถานะ "สนามต่อไป/กำลังแข่ง" ต้องสดเสมอ
+  calendar: (year, signal) => fetchJson(`/api/calendar${year ? `?year=${year}` : ""}`, { signal }),
+  // เก็บใน localStorage เฉพาะตอน "เจอคลิป" — ถ้ายังไม่เจอ/ยังไม่ตั้ง key ต้องถามใหม่ทุกครั้ง
+  highlight: async (sessionKey, signal) => {
+    const key = `hl:${sessionKey}`;
+    const hit = cacheGet(key, DAY_MS);
+    if (hit) return hit;
+    const data = await fetchJson(`/api/race/${sessionKey}/highlight`, { signal });
+    if (data.available) cacheSet(key, data);
+    return data;
+  },
   raceInfo: (sessionKey, signal) => cached(`info:${sessionKey}`, DAY_MS, `/api/race/${sessionKey}/info`, signal),
   timeline: (sessionKey, dateEnd, signal) => cached(`race:${sessionKey}`, raceMaxAge(dateEnd), `/api/race/${sessionKey}`, signal),
   driver: (sessionKey, driverNumber, signal) =>

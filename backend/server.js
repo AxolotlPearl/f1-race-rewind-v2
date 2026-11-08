@@ -21,6 +21,8 @@ import { getFinishedRaces, isValidYear, listYears, FIRST_YEAR, currentYear } fro
 import { searchRaces, findRace } from "./lib/searchIndex.js";
 import { buildDriverStory } from "./lib/driverStory.js";
 import { buildStandings } from "./lib/standings.js";
+import { buildCalendar } from "./lib/calendar.js";
+import { findHighlight } from "./lib/youtube.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TRACKS_DIR = path.join(__dirname, "data/tracks");
@@ -110,6 +112,32 @@ app.get(
     const standings = await buildStandings(year);
     setCdnCache(res, year === currentYear() ? 300 : 86400);
     res.json(standings);
+  })
+);
+
+// ปฏิทินฤดูกาล + สนามต่อไป (นับถอยหลังในหน้าแรก) — สถานะคำนวณจากเวลา server ทุก request
+app.get(
+  "/api/calendar",
+  wrap(async (req, res) => {
+    const year = req.query.year == null ? currentYear() : Number(req.query.year);
+    if (!isValidYear(year)) throw new ApiError(400, `ต้องระบุ year เป็นปีที่ถูกต้อง (${FIRST_YEAR}–${currentYear()})`);
+    const calendar = await buildCalendar(year);
+    // ปีปัจจุบัน cache สั้น (สถานะ live/next เปลี่ยนได้) ปีเก่า cache นาน
+    setCdnCache(res, year === currentYear() ? 60 : 86400);
+    res.json(calendar);
+  })
+);
+
+// คลิปไฮไลต์ YouTube ของเรซ — Express ถือ API key (ไม่ส่งถึง browser) และ cache ผลประหยัดโควตา
+app.get(
+  "/api/race/:sessionKey/highlight",
+  wrap(async (req, res) => {
+    const sessionKey = parsePositiveInt(req.params.sessionKey, "session key");
+    const race = await findRace(sessionKey);
+    if (!race) throw new ApiError(404, "ไม่พบเรซนี้ (หรือยังแข่งไม่จบ)");
+    const highlight = await findHighlight(race);
+    setCdnCache(res, highlight.available ? 86400 : 600);
+    res.json(highlight);
   })
 );
 

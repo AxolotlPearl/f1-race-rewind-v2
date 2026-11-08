@@ -16,6 +16,7 @@ import TrackMap from "../components/TrackMap.jsx";
 import TimelinePanel from "../components/TimelinePanel.jsx";
 import ResultsTable from "../components/ResultsTable.jsx";
 import FastestPits from "../components/FastestPits.jsx";
+import HighlightVideo from "../components/HighlightVideo.jsx";
 import { Skeleton, EmptyState, ErrorState } from "../components/StatusViews.jsx";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", { dateStyle: "long" });
@@ -99,6 +100,14 @@ export default function RacePage({ onVisitRace }) {
           <h2>แผนที่สนาม</h2>
           {(timelineReq.status === "loading" || infoReq.status === "loading") && <Skeleton variant="map" />}
           {timeline && race && <TrackMap race={race} timeline={timeline} playRequest={playRequest} onEventChange={setCurrentEventId} />}
+        </section>
+      )}
+
+      {race && (
+        <section className="card highlight-card" aria-label="คลิปไฮไลต์">
+          <h2>🎬 คลิปไฮไลต์</h2>
+          <p className="panel-hint">คลิปสรุปจากช่อง Formula 1 (ตัดต่อแล้ว ไม่ได้เรียงตามเวลาจริงของแผนที่) — ใช้คู่กับไทม์ไลน์ด้านล่างเพื่อดูว่าแต่ละช็อตเกิดตรงไหน</p>
+          <HighlightVideo sessionKey={sessionKey} />
         </section>
       )}
 

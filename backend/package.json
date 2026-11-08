@@ -5,14 +5,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "start": "node --env-file-if-exists=.env server.js",
     "probe": "node scripts/probe-api.mjs",
     "build-track": "node scripts/build-track.js",
-    "test": "node test/dsa.test.js && node test/rateLimiter.test.js && node test/trie.test.js && node test/standings.test.js"
+    "test": "node test/dsa.test.js && node test/rateLimiter.test.js && node test/trie.test.js && node test/standings.test.js && node test/youtube.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "dependencies": {
     "express": "^4.19.2"

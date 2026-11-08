@@ -9,7 +9,7 @@
 //      คำตอบเก่าที่มาช้าจะไม่ทับข้อมูลใหม่ (กัน race condition) และ StrictMode ที่ mount 2 รอบตอน dev ก็ไม่ซ้อนกัน
 //   4. reload() เพิ่มตัวนับ attempt ซึ่งอยู่ใน deps → ยิงใหม่เฉพาะตอนผู้ใช้กด "ลองใหม่" เท่านั้น
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * @param {(signal: AbortSignal) => Promise<any>} loader ฟังก์ชันโหลดข้อมูล
@@ -43,5 +43,7 @@ export function useAsync(loader, deps, { isEmpty = () => false, enabled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, attempt, enabled]);
 
-  return { ...state, reload: () => setAttempt((n) => n + 1) };
+  // useCallback: reload เป็นฟังก์ชันเดิมทุก render — component อื่นเอาไปใส่ใน deps ของ effect ได้โดยไม่วนลูป
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
+  return { ...state, reload };
 }

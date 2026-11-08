@@ -10,13 +10,13 @@
 | **คลิปนำเสนอ** | _(ใส่ลิงก์ YouTube แบบ Unlisted)_ |
 
 เว็บสำหรับ "ดูย้อนหลัง" ว่าเรซ Formula 1 แต่ละสนามเกิดอะไรขึ้น: ไทม์ไลน์การแซง/เข้าพิท/ธง, แผนที่สนามที่รถวิ่งจริง
-และ (ใหม่) หน้าเจาะนักขับรายคน, ค้นหาเรซข้ามทุกฤดูกาล ตารางคะแนนทั้งฤดูกาลพร้อมบัตรนักแข่ง/บัตรทีม, หน้านักแข่งพร้อมโลโก้ทีม และโปรไฟล์ย่อเมื่อชี้เมาส์ที่ชื่อนักแข่ง
+และ (ใหม่) หน้าเจาะนักขับรายคน, ค้นหาเรซข้ามทุกฤดูกาล ตารางคะแนนทั้งฤดูกาลพร้อมบัตรนักแข่ง/บัตรทีม, หน้านักแข่งพร้อมโลโก้ทีม โปรไฟล์ย่อเมื่อชี้เมาส์ที่ชื่อนักแข่ง, หน้าแรกแบบ dashboard (นับถอยหลังสนามต่อไป + ปฏิทิน + ตารางคะแนน) และคลิปไฮไลต์ YouTube
 
 ---
 
 ## วิธีรัน
 
-ต้องมี Node.js 18 ขึ้นไป
+ต้องมี Node.js 22 ขึ้นไป (backend ใช้ `--env-file-if-exists` อ่านไฟล์ `.env`)
 
 ```bash
 npm run install:all
@@ -31,6 +31,9 @@ npm run dev:backend
 ```bash
 npm run dev:frontend
 ```
+
+**(ไม่บังคับ) ฝังคลิปไฮไลต์ YouTube**: คัดลอก `backend/.env.example` เป็น `backend/.env` แล้วใส่ `YOUTUBE_API_KEY`
+(ขอฟรีที่ Google Cloud Console → เปิด YouTube Data API v3 → Create API key) ถ้าไม่ใส่ หน้าเรซจะแสดงปุ่มลิงก์ไปค้นบน YouTube แทน
 
 แล้วเปิด http://localhost:5173 — Vite proxy `/api/*` ไปหา Express ที่พอร์ต 3001 ให้เอง ([frontend/vite.config.js](frontend/vite.config.js))
 
@@ -56,7 +59,8 @@ frontend/                React + Vite
   src/components/        NavBar, SearchBox, RaceCard, SummaryBar, TrackMap, TimelinePanel,
                          TimelineCard, ResultsTable, FastestPits, StatusViews,
                          ProfileModal, DriverCard, TeamCard, SeasonCards (บัตรนักแข่ง/ทีม),
-                         TeamLogo (โลโก้ทีม), DriverHover (โปรไฟล์ย่อตอนชี้เมาส์)
+                         TeamLogo (โลโก้ทีม), DriverHover (โปรไฟล์ย่อตอนชี้เมาส์),
+                         NextRaceCountdown, SeasonCalendar, StandingsSidebar (หน้าแรก), HighlightVideo
   src/hooks/useAsync.js  hook โหลดข้อมูล (loading/empty/error/success + กันยิงซ้ำ)
   src/hooks/useSeason.js ปี + ตารางคะแนน + บัตรที่เปิด (อ่าน/เขียนผ่าน URL) ใช้ร่วม 2 หน้า
   src/seasonCache.js     cache ตารางคะแนนต่อปี (Promise ใน HashTable) ให้ป๊อปอัปทุกจุดใช้ร่วม
@@ -68,6 +72,9 @@ backend/                 Express
   lib/Trie.js            ★ Trie สำหรับค้นหาเรซ (DSA ใหม่)
   lib/searchIndex.js     ดัชนีค้นหาข้ามทุกปี
   lib/standings.js       ★ ตารางคะแนนนักขับ/ทีมทั้งฤดูกาล + countback
+  lib/calendar.js        ปฏิทินฤดูกาล + สถานะสนาม (จบแล้ว/กำลังแข่ง/ถัดไป) + สนามต่อไป
+  lib/youtube.js         หาคลิปไฮไลต์จากช่อง F1 (ถือ API key ไว้ฝั่ง server) + cache ประหยัดโควตา
+  .env.example           ตัวอย่างไฟล์ตั้งค่า YOUTUBE_API_KEY (ไฟล์ .env จริงไม่ขึ้น git)
   lib/driverStory.js     ★ สรุปเรื่องราวนักขับ (ประมวลผลที่ server)
   lib/races.js           รายชื่อเรซที่แข่งจบแล้ว
   lib/timeline.js        รวม 5 endpoint เป็นไทม์ไลน์เดียว (merge sort)
@@ -88,8 +95,8 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | ชื่อ-สกุล | รหัสนักศึกษา | ชิ้นงานที่รับผิดชอบ (ไฟล์ / component / route / DSA) | ช่วงที่นำเสนอในคลิป |
 |---|---|---|---|
 | น.ส.สมัชญา จันทร์สว่าง | 681310797 | **React**: `App.jsx`, `NavBar.jsx`, `Graph.js` (Graph + BFS), `useAsync.js`, `RacePage.jsx`, `TimelinePanel.jsx` | ช่วง 4 อธิบายโค้ด React |
-| น.ส.สรัลพร สุขสมวงศ์ | 681310023 | **UX**: `HomePage.jsx`, `SearchBox.jsx`, `DriverPage.jsx`, `ScoreboardPage.jsx`, `DriversPage.jsx` + `DriverCard`/`TeamCard`/`ProfileModal`/`TeamLogo`/`DriverHover`, `StatusViews.jsx`, `TrackMap.jsx` + `MapPlayer.js`, ตาราง Before→After | ช่วง 2 จากงานแรกสู่งานนี้, ช่วง 3 Demo |
-| นายธนพัฒน์ ก๋งเม่ง | 681310011 | **Express / DSA**: `server.js` (validate, error middleware, routes), `lib/Trie.js`, `lib/searchIndex.js`, `lib/driverStory.js`, `lib/standings.js`, `test/trie.test.js`, `test/standings.test.js` | ช่วง 5 Express และ DSA |
+| น.ส.สรัลพร สุขสมวงศ์ | 681310023 | **UX**: `HomePage.jsx` (dashboard) + `NextRaceCountdown`/`SeasonCalendar`/`StandingsSidebar`, `SearchBox.jsx`, `HighlightVideo.jsx`, `DriverPage.jsx`, `ScoreboardPage.jsx`, `DriversPage.jsx` + `DriverCard`/`TeamCard`/`ProfileModal`/`TeamLogo`/`DriverHover`, `StatusViews.jsx`, `TrackMap.jsx` + `MapPlayer.js`, ตาราง Before→After | ช่วง 2 จากงานแรกสู่งานนี้, ช่วง 3 Demo |
+| นายธนพัฒน์ ก๋งเม่ง | 681310011 | **Express / DSA**: `server.js` (validate, error middleware, routes), `lib/Trie.js`, `lib/searchIndex.js`, `lib/driverStory.js`, `lib/standings.js`, `lib/calendar.js`, `lib/youtube.js`, `test/trie.test.js`, `test/standings.test.js`, `test/youtube.test.js` | ช่วง 5 Express และ DSA |
 
 ---
 
@@ -115,13 +122,18 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 └─ App                                  state: recent  (เรซ/นักขับที่ดูล่าสุด)
    ├─ NavBar        ◄─ props: graph, currentId, params, labels
    └─ <Routes>
-      ├─ HomePage   ◄─ props: recentRace                    state: year
+      ├─ HomePage   ◄─ props: recentRace                    state: year, showPast
+      │  ├─ NextRaceCountdown ◄─ props: next ──► callback onFinished() (เรซจบ → แม่โหลดปฏิทินใหม่)   state: now
+      │  ├─ SeasonCalendar    ◄─ props: rounds, showPast
+      │  ├─ StandingsSidebar  ◄─ props: year                                          state: view
+      │  │  └─ LeaderCard     ◄─ props: leader, second, year
       │  ├─ SearchBox    ──► callback onPick(race) ขึ้นไปหา HomePage (navigate)
       │  │                                                   state: query, debounced, activeIndex, open
       │  └─ RaceCard ×n  ◄─ props: race, featured
       ├─ RacePage   ◄─ props: onVisitRace (callback ขึ้นไปหา App)
       │  │                                                   state: currentEventId, playRequest
       │  ├─ SummaryBar   ◄─ props: sessionKey, summary, dataAvailability
+      │  ├─ HighlightVideo ◄─ props: sessionKey                                      state: playing
       │  ├─ TrackMap     ◄─ props: race, timeline, playRequest
       │  │               ──► callback onEventChange(eventId) ขึ้นไปหา RacePage
       │  │                                                   state: status {playing, speed, statusText}
@@ -177,6 +189,10 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 |---|---|---|---|---|
 | `recent` | เรซ + นักขับที่ดูล่าสุด `{ race, driver }` | `App` | `RacePage`/`DriverPage` เรียก callback `onVisitRace`/`onVisitDriver` เมื่อโหลดหัวเรื่องเรซ/นักขับสำเร็จ | NavBar ต้อง re-render เมนู/breadcrumb ตามค่านี้ และต้องอยู่ข้ามการเปลี่ยนหน้า |
 | `year` | ปีที่ผู้ใช้กดเลือก (`null` = ยังไม่เลือก) | `HomePage` | ผู้ใช้กดปุ่มปี | เปลี่ยนแล้วต้องโหลดและแสดงรายชื่อเรซชุดใหม่ (ปีที่ "แสดง" คำนวณจาก `year ?? ปีล่าสุดจาก API` ไม่เก็บซ้ำ) |
+| `showPast` | ปฏิทินแสดงทั้งฤดูกาลหรือเฉพาะสนามที่ยังไม่แข่ง | `HomePage` | ผู้ใช้กดปุ่ม "แสดงทั้งฤดูกาล" | รายการในปฏิทินต้องเปลี่ยน (ค่าเริ่มต้นย่อ ให้หน้าแรกสั้น) |
+| `now` | เวลาปัจจุบัน (ms) | `NextRaceCountdown` | `setInterval` ทุก 1 วินาที | ตัวเลขนับถอยหลังต้อง re-render ทุกวินาที ("เหลืออีกเท่าไร" คำนวณจาก now จึงไม่เก็บซ้ำ) |
+| `view` (sidebar) | แท็บนักแข่ง/ทีมของแถบขวาหน้าแรก | `StandingsSidebar` | ผู้ใช้กดแท็บ | สลับรายการที่แสดง — ใช้แค่ในแถบนี้ จึงไม่ยกขึ้นไป |
+| `playing` | ผู้ใช้กดเล่นคลิปแล้วหรือยัง | `HighlightVideo` | ผู้ใช้กดภาพปก | สลับจากภาพปกเป็น iframe ของ YouTube (ไม่โหลด iframe หนัก ๆ จนกว่าจะอยากดู) |
 | `query` | ข้อความในช่องค้นหา | `SearchBox` | ผู้ใช้พิมพ์ (`onChange`) | controlled input — ช่องต้องแสดงค่าที่พิมพ์ |
 | `debounced` | `query` ที่นิ่งแล้ว 250ms | `SearchBox` | effect debounce ตั้งค่าหลังหยุดพิมพ์ | เป็น dependency ของการยิง `/api/search` — ยิงตอนหยุดพิมพ์ ไม่ใช่ทุกการกดแป้น |
 | `activeIndex` | แถวผลค้นหาที่ไฮไลต์ | `SearchBox` | ผู้ใช้กด ↑↓ / เอาเมาส์ชี้, รีเซ็ตเมื่อผลชุดใหม่มา | ต้อง re-render ไฮไลต์ และ Enter ต้องรู้ว่าเลือกแถวไหน |
@@ -208,6 +224,8 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | component | effect ทำอะไร | dependency array | ทำงานตอนไหน |
 |---|---|---|---|
 | `useAsync` (ใช้ในทุกหน้า) | เรียก Express ผ่าน `loader` แล้ว setState ผลลัพธ์; cleanup = `controller.abort()` | `[...deps, attempt, enabled]` | ครั้งแรกที่ mount, เมื่อ deps เปลี่ยน (เช่น `sessionKey`), หรือผู้ใช้กดลองใหม่ — **ไม่** ทำงานทุก render |
+| `NextRaceCountdown` | ตั้ง `setInterval` เดินนาฬิกาทุก 1 วินาที; cleanup = `clearInterval` | `[]` | ครั้งเดียวตอน mount (ถ้าใส่ `now` ใน deps จะสร้าง timer ใหม่ซ้อนทุกวินาที) |
+| `NextRaceCountdown` | เรซจบระหว่างเปิดหน้า → เรียก `onFinished` ให้แม่โหลดปฏิทินใหม่ | `[isOver, onFinished]` (`onFinished` = `reload` ของ useAsync ที่ห่อ `useCallback` แล้ว) | ตอน `isOver` เปลี่ยนเป็น true |
 | `App` | บันทึก `recent` ลง localStorage | `[recent]` | ทุกครั้งที่ดูเรซ/นักขับใหม่ |
 | `SearchBox` | debounce: ตั้งเวลา 250ms แล้วค่อย `setDebounced`; cleanup = `clearTimeout` | `[query]` | ทุกครั้งที่พิมพ์ (แต่ตัวเก่าถูกยกเลิก จึงยิง API จริงแค่ตอนหยุดพิมพ์) |
 | `SearchBox` | รีเซ็ตแถวที่ไฮไลต์เป็นแถวแรก | `[debounced]` | เมื่อคำค้นที่ใช้ยิงจริงเปลี่ยน |
@@ -227,11 +245,12 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 2. `loader` เป็นฟังก์ชันที่สร้างใหม่ทุก render จึง **ตั้งใจไม่ใส่ใน deps** (ไม่งั้นยิง API ทุก render) — ใส่เฉพาะค่าที่มีผลจริง เช่น `sessionKey`
 3. callback ที่ส่งจาก App (`onVisitRace`, `onVisitDriver`) ห่อด้วย `useCallback(..., [])` เป็นฟังก์ชันเดิมทุก render
    → effect ของหน้าลูกที่มีมันใน deps ไม่ทำงานซ้ำ (ถ้าไม่ห่อ: ลูก setState ใน App → App re-render → ฟังก์ชันใหม่ → effect ลูกทำงานอีก → วนลูป)
-4. cleanup `abort()` — เปลี่ยนเรซระหว่างรอ คำตอบเก่าถูกยกเลิก ไม่ทับข้อมูลใหม่ (กัน race condition) และ `React.StrictMode`
+4. `reload` ที่ `useAsync` คืนให้ห่อด้วย `useCallback` — ส่งต่อเป็น callback (เช่น `onFinished` ของนับถอยหลัง) แล้วใส่ใน deps ได้โดยไม่ทำให้ effect ทำงานซ้ำทุก render
+5. cleanup `abort()` — เปลี่ยนเรซระหว่างรอ คำตอบเก่าถูกยกเลิก ไม่ทับข้อมูลใหม่ (กัน race condition) และ `React.StrictMode`
    ที่ mount 2 รอบตอน dev ก็ไม่ทำให้ข้อมูลซ้อน
-5. ป๊อปอัปโปรไฟล์: หน่วง 0.3 วินาทีก่อนเปิด (ลากเมาส์ผ่านไม่โหลด) และทุกจุดใช้ `seasonCache` ที่เก็บ **Promise ตัวเดียวต่อปี** ใน HashTable — ชี้ 20 ชื่อ = ยิง API ครั้งเดียว
-6. ค้นหาใช้ debounce + ไม่ยิงถ้าพิมพ์ไม่ถึง 2 ตัวอักษร (`enabled: false`)
-7. ชั้น cache: localStorage (เรซที่จบนานแล้วเก็บถาวร) → Express HashTable cache → CDN `Cache-Control`
+6. ป๊อปอัปโปรไฟล์: หน่วง 0.3 วินาทีก่อนเปิด (ลากเมาส์ผ่านไม่โหลด) และทุกจุดใช้ `seasonCache` ที่เก็บ **Promise ตัวเดียวต่อปี** ใน HashTable — ชี้ 20 ชื่อ = ยิง API ครั้งเดียว
+7. ค้นหาใช้ debounce + ไม่ยิงถ้าพิมพ์ไม่ถึง 2 ตัวอักษร (`enabled: false`)
+8. ชั้น cache: localStorage (เรซที่จบนานแล้วเก็บถาวร) → Express HashTable cache → CDN `Cache-Control`
 
 ---
 
@@ -269,6 +288,7 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► api.openf1.org
                                   │
                                   ├─ proxy + rate limit   คิวกลาง 2 ระดับ 3 req/s, 30 req/min (OpenF1 จำกัดต่อ IP)
+                                  ├─ ซ่อน API key         YOUTUBE_API_KEY อยู่ใน backend/.env เท่านั้น → browser ได้แค่ videoId
                                   ├─ cache                HashTable module-scope + Cache-Control ให้ CDN
                                   ├─ validate             year / sessionKey / driverNumber / ช่วงเวลา / คำค้น → 400
                                   ├─ ประมวลผล             รวม 5 endpoint เป็นไทม์ไลน์ (merge sort), Trie ค้นหา,
@@ -283,6 +303,8 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | `GET /api/races?year=` | เรซที่แข่งจบแล้วของปีนั้น (validate ปี) |
 | `GET /api/search?q=` | **ใหม่** ค้นหาเรซข้ามทุกปีด้วย Trie |
 | `GET /api/standings?year=` | **ใหม่** ตารางคะแนนนักขับ + ทีมทั้งฤดูกาล พร้อมผลรายสนาม (OpenF1 2 request ต่อปี) |
+| `GET /api/calendar?year=` | **ใหม่** ปฏิทินฤดูกาล + สถานะแต่ละสนาม + สนามต่อไป (ถ้าปีนี้แข่งครบ หาเรซแรกของปีหน้า) |
+| `GET /api/race/:key/highlight` | **ใหม่** คลิปไฮไลต์ YouTube (ใช้ API key ฝั่ง server, cache ผลต่อเรซ, ไม่มี key → ลิงก์ค้นหา) |
 | `GET /api/race/:key/info` | **ใหม่** หัวเรื่องเรซ (ให้ deep link/รีเฟรชรู้ว่าเป็นเรซอะไร) |
 | `GET /api/race/:key` | ไทม์ไลน์ + ผลจบ + พิทเร็วสุด + สรุป |
 | `GET /api/race/:key/driver/:num` | **ใหม่** เรื่องราวนักขับ (ส่งเฉพาะ event ของคนนั้น) |
@@ -345,6 +367,17 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
   ข้อมูลมาจาก `seasonCache` — เก็บ Promise ของตารางคะแนนต่อปีใน HashTable ทุกป๊อปอัปรอ Promise ตัวเดียวกัน (ชี้ชื่อแรก = โหลด 1 ครั้ง, ชื่อต่อไป O(1))
   ป๊อปอัป render ผ่าน `createPortal` ไปที่ `<body>` แบบ `position: fixed` จึงไม่ถูกตัดขอบเมื่อชื่ออยู่ในตาราง/บัตรที่เลื่อนได้
 
+### หน้าแรก dashboard + คลิปไฮไลต์
+
+- **นับถอยหลัง/ปฏิทิน**: `/api/calendar` รวม `/meetings` + `/sessions` ทั้งปี จับคู่ session กับสนามด้วย HashTable `meeting_key → {race, sprint, qualifying}` O(S)
+  แล้ว mergeSort ตามเวลาเรซ — สถานะ (จบแล้ว/กำลังแข่ง/ถัดไป/ยกเลิก) คำนวณจากนาฬิกา server ทุก request ไม่ hardcode
+  ฝั่ง React นับถอยหลังด้วย `setInterval` 1 วินาที ใช้นาฬิกาเครื่องผู้ใช้ (เวลาในคำตอบของ server ถูก cache ได้ 60 วินาที จึงไม่ใช้ชดเชย) และโหลดปฏิทินใหม่เองเมื่อเรซจบ
+- **แถบขวา**: ผู้นำอันดับ 1 + 10 อันดับแรก ใช้ `seasonCache` ชุดเดียวกับหน้าตารางคะแนน (ไม่ยิง API เพิ่ม)
+- **คลิปไฮไลต์**: Express ค้นช่อง Formula 1 ผ่าน YouTube Data API (100 หน่วยโควตา/ครั้ง จากโควตาฟรี 10,000/วัน) เลือกคลิปด้วยการให้คะแนนชื่อ
+  (มี "Highlights" + ปีตรง + Race/Sprint ตรง, ไม่ใช่ควอลิฟาย) แล้ว cache ต่อเรซตลอดอายุ server — หน้าเว็บโหลด iframe เมื่อกดเล่นเท่านั้น
+- **ทำไมเลื่อนคลิปตามเวลาบนแผนที่ไม่ได้**: คลิปไฮไลต์ถูกตัดต่อจากเรซ ~2 ชั่วโมงเหลือ ~7–10 นาที (ตัดข้าม ย้อนภาพช้า สลับลำดับ)
+  ไม่มีข้อมูลบอกว่าวินาทีไหนของคลิปตรงกับเวลาไหนในเรซ จึงจับคู่อัตโนมัติไม่ได้อย่างน่าเชื่อถือ — แสดงคลิปคู่กับไทม์ไลน์ให้ผู้ใช้ดูประกอบแทน
+
 ### Driver story — ประมวลผลที่ Express
 
 [backend/lib/driverStory.js](backend/lib/driverStory.js) วนไทม์ไลน์ครั้งเดียว O(E) นับแซง/โดนแซง, HashTable นับคู่ปรับ,
@@ -359,6 +392,8 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | ดูเรซที่รู้ชื่อสนาม | เลือกปี → เปิด dropdown → เลื่อนหา → เลือก (4) | พิมพ์ 3 ตัว → Enter (2) |
 | กลับมาดูเรซเดิม | เลือกปี → หาเรซใหม่ | การ์ด "ดูต่อจากครั้งก่อน" / เมนู "เรซที่ดูล่าสุด" (1) หรือเปิดลิงก์เดิม |
 | ดูผลงานนักขับคนเดียว | เลือก dropdown นักขับ → ไล่อ่าน/นับเอง | คลิกชื่อในตารางผล (1) → เห็นสรุปทันที |
+| รู้ว่าเรซต่อไปแข่งเมื่อไหร่ ที่ไหน | ไม่มี | เปิดหน้าแรก (0) → นับถอยหลัง + ปฏิทิน |
+| ดูคลิปไฮไลต์ของเรซ | ไม่มี (ต้องไปค้นเองใน YouTube) | หน้าเรซ → กดเล่น (1) |
 | ดูว่านักแข่งในเรซคือใคร อันดับเท่าไรในฤดูกาล | ไม่มี | ชี้เมาส์ที่ชื่อ (0) → โปรไฟล์ย่อ |
 | ดูคะแนนทั้งฤดูกาลของนักขับ/ทีม | ไม่มี (ต้องเปิดทีละเรซ ~30 เรซ) | เมนู 🏆 ตารางคะแนน → คลิกชื่อ (2) → บัตรมีผลทุกสนาม |
 | แชร์เรซให้เพื่อน | ทำไม่ได้ (URL เดียว) | คัดลอก URL |

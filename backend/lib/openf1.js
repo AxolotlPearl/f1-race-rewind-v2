@@ -73,6 +73,12 @@ export function getSessions(year, sessionType = "Race") {
   return fetchOpenF1(`/sessions?year=${encodeURIComponent(year)}&session_type=${encodeURIComponent(sessionType)}`, { ttlMs });
 }
 
+/** ทุก session ของปี (ซ้อม/ควอลิฟาย/สปรินต์/เรซ) — ใช้ทำปฏิทินที่บอกเวลาควอลิฟายและสปรินต์ด้วย */
+export function getAllSessions(year) {
+  const ttlMs = isCurrentOrFutureSeason(year) ? CURRENT_SEASON_TTL_MS : Infinity;
+  return fetchOpenF1(`/sessions?year=${encodeURIComponent(year)}`, { ttlMs });
+}
+
 export function getMeetings(year) {
   const ttlMs = isCurrentOrFutureSeason(year) ? CURRENT_SEASON_TTL_MS : Infinity;
   return fetchOpenF1(`/meetings?year=${encodeURIComponent(year)}`, { ttlMs });
