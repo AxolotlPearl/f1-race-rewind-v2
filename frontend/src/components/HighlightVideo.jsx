@@ -1,28 +1,28 @@
 // src/components/HighlightVideo.jsx
-// คลิปไฮไลต์ของเรซจาก YouTube (ช่อง Formula 1) — Express หา videoId ให้ (ถือ API key ไว้ฝั่ง server)
+// คลิปไฮไลต์ของเรซจาก YouTube (ช่อง Formula 1) — Express หา videoId ที่ตรงเรซให้ (ถือ API key ไว้ฝั่ง server)
 //
-// แสดงเป็น "ภาพปก + ปุ่มเล่น" ก่อน แล้วค่อยโหลด iframe ของ YouTube เมื่อผู้ใช้กดเล่น (click-to-load):
-//   iframe ของ YouTube หนักหลาย MB และฝัง cookie — ไม่โหลดจนกว่าผู้ใช้อยากดูจริง หน้าเรซจึงเปิดเร็วเท่าเดิม
-//   ใช้โดเมน youtube-nocookie.com (โหมดความเป็นส่วนตัวของ YouTube)
+// ทำไมเปิดใน YouTube แทนการฝัง (iframe) ในหน้า:
+//   ทดสอบแล้ว (8 พ.ย. 2569) แม้ API บอกว่า embeddable: true แต่ Formula One Management (FOM) จำกัดให้เล่นได้เฉพาะ
+//   เว็บที่ได้รับอนุญาต — ฝังใน localhost/เว็บของเราขึ้น "Video unavailable … blocked it from display on this website"
+//   ทั้ง youtube.com/embed และ youtube-nocookie.com จึงแสดงภาพปก + ชื่อคลิปจริง แล้วกดเปิดคลิปนั้นตรง ๆ ในแท็บใหม่
+//   (ยังดีกว่าลิงก์ค้นหา: ผู้ใช้ได้คลิปที่ถูกเรซ/ถูกปี/ถูกประเภท Race-Sprint ทันที)
 //
-// props: sessionKey
-// state: playing — ผู้ใช้กดเล่นแล้วหรือยัง (true = แสดง iframe แทนภาพปก)
+// props: race (หัวเรื่องเรซ: sessionKey, year, meetingName, sessionName, dateStart)
+// ไม่มี state ของตัวเอง — ผลโหลดอยู่ใน useAsync
 
-import { useState } from "react";
 import { api } from "../api.js";
 import { useAsync } from "../hooks/useAsync.js";
 import { Skeleton } from "./StatusViews.jsx";
 
 const REASON_TEXT = {
-  "no-key": "ยังไม่ได้ตั้งค่า YouTube API key ที่ backend จึงฝังคลิปไม่ได้",
+  "no-key": "ยังไม่ได้ตั้งค่า YouTube API key ที่ backend",
   "not-found": "ยังไม่พบคลิปไฮไลต์ของเรซนี้ในช่อง Formula 1",
   quota: "โควตาค้นหา YouTube ของวันนี้หมดแล้ว",
   error: "ค้นหาคลิปไม่สำเร็จ",
 };
 
-export default function HighlightVideo({ sessionKey }) {
-  const [playing, setPlaying] = useState(false);
-  const req = useAsync((signal) => api.highlight(sessionKey, signal), [sessionKey]);
+export default function HighlightVideo({ race }) {
+  const req = useAsync((signal) => api.highlight(race, signal), [race.sessionKey]);
 
   if (req.status === "loading") return <Skeleton variant="map" />;
   if (req.status === "error") {
@@ -41,26 +41,16 @@ export default function HighlightVideo({ sessionKey }) {
     );
   }
 
+  const watchUrl = `https://www.youtube.com/watch?v=${h.videoId}`;
   return (
     <div className="highlight-video">
-      {playing ? (
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${h.videoId}?autoplay=1&rel=0`}
-          title={h.title}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-        />
-      ) : (
-        <button type="button" className="video-facade" onClick={() => setPlaying(true)} aria-label={`เล่นคลิป ${h.title}`}>
-          {h.thumbnail && <img src={h.thumbnail} alt="" loading="lazy" />}
-          <span className="play-icon">▶</span>
-        </button>
-      )}
+      <a className="video-facade" href={watchUrl} target="_blank" rel="noreferrer" aria-label={`ดูคลิป ${h.title} บน YouTube (แท็บใหม่)`}>
+        {h.thumbnail && <img src={h.thumbnail} alt="" loading="lazy" />}
+        <span className="play-icon">▶</span>
+        <span className="video-badge">เปิดใน YouTube ↗</span>
+      </a>
       <p className="video-title">
-        {h.title} ·{" "}
-        <a href={`https://www.youtube.com/watch?v=${h.videoId}`} target="_blank" rel="noreferrer">
-          เปิดใน YouTube ↗
-        </a>
+        {h.title} <span className="dim">· FOM อนุญาตให้เล่นบน YouTube เท่านั้น คลิปจึงเปิดในแท็บใหม่</span>
       </p>
     </div>
   );

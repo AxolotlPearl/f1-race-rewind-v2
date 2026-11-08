@@ -71,11 +71,13 @@ export const api = {
   // ปฏิทิน: ไม่ cache ใน localStorage — สถานะ "สนามต่อไป/กำลังแข่ง" ต้องสดเสมอ
   calendar: (year, signal) => fetchJson(`/api/calendar${year ? `?year=${year}` : ""}`, { signal }),
   // เก็บใน localStorage เฉพาะตอน "เจอคลิป" — ถ้ายังไม่เจอ/ยังไม่ตั้ง key ต้องถามใหม่ทุกครั้ง
-  highlight: async (sessionKey, signal) => {
-    const key = `hl:${sessionKey}`;
+  // ส่งชื่อเรซไปด้วย เผื่อ server หาเรซจาก OpenF1 ไม่ได้ (เช่นช่วงที่ OpenF1 ปิด API ระหว่างแข่งสด)
+  highlight: async (race, signal) => {
+    const key = `hl:${race.sessionKey}`;
     const hit = cacheGet(key, DAY_MS);
     if (hit) return hit;
-    const data = await fetchJson(`/api/race/${sessionKey}/highlight`, { signal });
+    const q = new URLSearchParams({ year: race.year, meeting: race.meetingName, session: race.sessionName, date: race.dateStart });
+    const data = await fetchJson(`/api/race/${race.sessionKey}/highlight?${q}`, { signal });
     if (data.available) cacheSet(key, data);
     return data;
   },

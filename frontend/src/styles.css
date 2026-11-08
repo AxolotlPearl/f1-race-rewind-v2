@@ -2285,3 +2285,15 @@ a.cal-row:hover {
 .yt-button:hover {
   background: #cc0000;
 }
+
+.video-badge {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+}

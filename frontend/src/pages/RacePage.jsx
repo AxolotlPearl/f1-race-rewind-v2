@@ -107,7 +107,7 @@ export default function RacePage({ onVisitRace }) {
         <section className="card highlight-card" aria-label="คลิปไฮไลต์">
           <h2>🎬 คลิปไฮไลต์</h2>
           <p className="panel-hint">คลิปสรุปจากช่อง Formula 1 (ตัดต่อแล้ว ไม่ได้เรียงตามเวลาจริงของแผนที่) — ใช้คู่กับไทม์ไลน์ด้านล่างเพื่อดูว่าแต่ละช็อตเกิดตรงไหน</p>
-          <HighlightVideo sessionKey={sessionKey} />
+          <HighlightVideo race={race} />
         </section>
       )}
 

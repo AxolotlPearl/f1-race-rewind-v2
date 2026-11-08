@@ -15,16 +15,19 @@ let building = null; // Promise ที่กำลังสร้างอยู
 async function buildIndex() {
   const years = listYears();
   let failed = false;
+  let firstError = null;
   // ปีใดดึงไม่ได้ ยังค้นปีอื่นได้ แต่ให้ดัชนีหมดอายุเร็ว (30 วินาที) จะได้ลองดึงปีที่ขาดใหม่
   const perYear = await Promise.all(
     years.map((y) =>
-      getFinishedRaces(y).catch(() => {
+      getFinishedRaces(y).catch((err) => {
         failed = true;
+        firstError ??= err;
         return [];
       })
     )
   );
-  if (failed && perYear.every((list) => list.length === 0)) throw new Error("ดึงรายชื่อเรซจาก OpenF1 ไม่ได้เลย");
+  // ดึงไม่ได้เลยสักปี → ส่ง error ต้นเหตุต่อ (เช่น OpenF1 ปิดช่วงแข่งสด) ให้ server แสดงข้อความที่ตรงสาเหตุ
+  if (failed && perYear.every((list) => list.length === 0)) throw firstError;
   const races = perYear.flat();
 
   const trie = new Trie();

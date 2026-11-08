@@ -133,8 +133,19 @@ app.get(
   "/api/race/:sessionKey/highlight",
   wrap(async (req, res) => {
     const sessionKey = parsePositiveInt(req.params.sessionKey, "session key");
-    const race = await findRace(sessionKey);
-    if (!race) throw new ApiError(404, "ไม่พบเรซนี้ (หรือยังแข่งไม่จบ)");
+    // ปกติหาข้อมูลเรซจากดัชนีของเราเอง แต่ถ้า OpenF1 ใช้ไม่ได้ (เช่นช่วงแข่งสด) ให้ใช้ชื่อเรซที่หน้าเว็บส่งมาแทน
+    // (validate ทุกค่า — ใช้เป็นแค่คำค้น YouTube จึงไม่มีผลกับข้อมูลอื่นในระบบ)
+    let race = await findRace(sessionKey).catch(() => null);
+    if (!race) {
+      const year = Number(req.query.year);
+      const meetingName = String(req.query.meeting ?? "").trim();
+      const sessionName = req.query.session === "Sprint" ? "Sprint" : "Race";
+      const dateStart = new Date(String(req.query.date ?? ""));
+      if (!isValidYear(year) || meetingName.length === 0 || meetingName.length > 80 || Number.isNaN(dateStart.getTime())) {
+        throw new ApiError(404, "ไม่พบเรซนี้ (หรือยังแข่งไม่จบ)");
+      }
+      race = { sessionKey, year, meetingName, sessionName, dateStart: dateStart.toISOString() };
+    }
     const highlight = await findHighlight(race);
     setCdnCache(res, highlight.available ? 86400 : 600);
     res.json(highlight);
@@ -255,7 +266,11 @@ app.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: err.message });
   }
-  console.error(err);
+  // OpenF1 ปิด API ช่วงมีการแข่งสด และยังไม่มีข้อมูลสำรองบนดิสก์ของ request นี้ → บอกสาเหตุตรง ๆ (503 = ชั่วคราว)
+  if (err.liveLockout) {
+    return res.status(503).json({ error: "ตอนนี้มีการแข่ง F1 สดอยู่ OpenF1 จึงปิดการเข้าถึงข้อมูลชั่วคราว — ลองใหม่หลังจบเซสชัน (ข้อมูลที่เคยเปิดดูแล้วยังใช้ได้)" });
+  }
+  console.error(err.message);
   res.status(502).json({ error: "เรียกข้อมูลจาก OpenF1 ไม่สำเร็จ ลองใหม่อีกครั้ง" });
 });
 

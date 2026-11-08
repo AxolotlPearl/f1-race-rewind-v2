@@ -7,6 +7,50 @@
 
 import { rateLimiter } from "./rateLimiter.js";
 import { HashTable } from "./HashTable.js";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// ---------- cache ชั้นดิสก์ (stale-on-error) ----------
+// ช่วงที่มีเซสชัน F1 กำลังแข่งสด OpenF1 ปิด API ทั้งหมด (รวมข้อมูลย้อนหลัง) สำหรับผู้ใช้ที่ไม่มี key แบบเสียเงิน
+// → ตอบ 401 จนกว่าเซสชันจบ (เจอจริงระหว่าง São Paulo GP 2026) ถ้าไม่มีสำรอง ทั้งเว็บใช้ไม่ได้ช่วงนั้น
+// จึงบันทึกทุกคำตอบที่สำเร็จลงดิสก์ แล้วถ้ายิงจริงไม่สำเร็จ (401/5xx/เน็ตหลุด) ใช้ข้อมูลล่าสุดที่เคยได้แทน
+// (ข้อมูลเรซที่จบแล้วไม่เปลี่ยน ข้อมูลเก่าจึงยังถูกต้อง) — เก็บนอก git ใน backend/.cache/
+const DISK_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "../.cache/openf1");
+
+function diskFile(apiPath) {
+  return path.join(DISK_DIR, `${createHash("sha1").update(apiPath).digest("hex")}.json`);
+}
+
+async function diskGet(apiPath) {
+  try {
+    return JSON.parse(await readFile(diskFile(apiPath), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function diskSet(apiPath, data) {
+  // ไม่ต้องรอเขียนเสร็จ — ช้าหรือพังก็แค่ไม่มีสำรอง ไม่กระทบคำตอบปัจจุบัน (Vercel เขียนดิสก์ไม่ได้ก็เงียบไป)
+  mkdir(DISK_DIR, { recursive: true })
+    .then(() => writeFile(diskFile(apiPath), JSON.stringify({ path: apiPath, savedAt: new Date().toISOString(), data })))
+    .catch(() => {});
+}
+
+// circuit breaker: เจอ "ปิดช่วงแข่งสด" แล้ว ไม่ต้องยิงซ้ำทุก request (แต่ละตัวต้องรอคิว rate limit แล้วโดน 401 อยู่ดี
+// ทำให้หน้าเว็บค้างนาน) — 60 วินาทีถัดไปตอบจากสำรอง/แจ้ง lockout ทันที แล้วค่อยลองยิงจริงอีกครั้ง
+const LOCKOUT_PAUSE_MS = 60 * 1000;
+let lockoutUntil = 0;
+
+/** OpenF1Error - เก็บ status + บอกว่าเป็นการปิด API ช่วงแข่งสดหรือไม่ (server.js แปลงเป็นข้อความที่ผู้ใช้เข้าใจ) */
+export class OpenF1Error extends Error {
+  constructor(status, apiPath, body) {
+    super(`OpenF1 API ตอบ ${status} สำหรับ ${apiPath}: ${body}`);
+    this.status = status;
+    this.liveLockout = status === 401 && /live f1 session/i.test(body);
+  }
+}
 
 const BASE_URL = "https://api.openf1.org/v1";
 const CURRENT_SEASON_TTL_MS = 10 * 60 * 1000;
@@ -31,13 +75,32 @@ function isCurrentOrFutureSeason(year) {
  *   priority/isCancelled: ส่งต่อให้ rateLimiter (ดูคำอธิบายใน lib/rateLimiter.js)
  */
 async function fetchOpenF1(path, { ttlMs = Infinity, useCache = true, priority = "high", isCancelled } = {}) {
-  if (useCache && cache.has(path)) {
-    const entry = cache.get(path);
-    if (entry.expiresAt > Date.now()) return entry.data;
-    cache.delete(path);
+  // ไม่ลบ entry ที่หมดอายุทิ้ง — เก็บไว้เป็นสำรองถ้ายิงใหม่ไม่สำเร็จ
+  const memEntry = useCache ? cache.get(path) : undefined;
+  if (memEntry && memEntry.expiresAt > Date.now()) return memEntry.data;
+
+  let data;
+  try {
+    if (Date.now() < lockoutUntil) throw new OpenF1Error(401, path, "Live F1 session in progress (paused locally)");
+    data = await requestOpenF1(path, { priority, isCancelled });
+  } catch (err) {
+    if (err.liveLockout && Date.now() >= lockoutUntil) lockoutUntil = Date.now() + LOCKOUT_PAUSE_MS;
+    if (err.name === "AbortError" || !useCache) throw err;
+    const stale = memEntry ?? (await diskGet(path));
+    if (!stale) throw err;
+    console.warn(`[openf1] ใช้ข้อมูลสำรองของ ${path} (${err.status ?? err.message})`);
+    return stale.data;
   }
 
-  const data = await rateLimiter.enqueue(async () => {
+  if (useCache) {
+    cache.set(path, { data, expiresAt: Date.now() + ttlMs });
+    diskSet(path, data);
+  }
+  return data;
+}
+
+function requestOpenF1(path, { priority, isCancelled }) {
+  return rateLimiter.enqueue(async () => {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const res = await fetch(`${BASE_URL}${path}`);
 
@@ -56,16 +119,13 @@ async function fetchOpenF1(path, { ttlMs = Infinity, useCache = true, priority =
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(`OpenF1 API ตอบ ${res.status} สำหรับ ${path}: ${text}`);
+        throw new OpenF1Error(res.status, path, text);
       }
 
       return res.json();
     }
     throw new Error(`OpenF1 API ยัง 429 ต่อเนื่องหลัง retry ${MAX_RETRIES} ครั้งสำหรับ ${path}`);
   }, { priority, isCancelled });
-
-  if (useCache) cache.set(path, { data, expiresAt: Date.now() + ttlMs });
-  return data;
 }
 
 export function getSessions(year, sessionType = "Race") {
