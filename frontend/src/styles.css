@@ -1798,3 +1798,18 @@ code {
   color: var(--text-dim);
   font-size: 0.75rem;
 }
+
+/* บัตรทีม: เอากรอบไล่สีหนา ๆ รอบโลโก้ออก เหลือเส้นสีทีมบาง ๆ */
+.team-swatch {
+  width: auto;
+  height: auto;
+  background: none;
+}
+
+.team-swatch .team-logo {
+  width: 64px !important;
+  height: 64px !important;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--team-color);
+}
