@@ -111,6 +111,7 @@ export default function RacePage({ onVisitRace }) {
               events={timeline.events}
               drivers={timeline.drivers}
               currentEventId={currentEventId}
+              year={race?.year}
               // object ใหม่ทุกคลิก → TrackMap รู้ว่าต้องเล่น แม้คลิกการ์ดเดิมซ้ำ
               onSelectEvent={(event) => setPlayRequest({ event })}
             />
@@ -121,12 +122,12 @@ export default function RacePage({ onVisitRace }) {
             <h2>ผลจบการแข่ง</h2>
             <p className="panel-hint">คลิกชื่อนักขับเพื่อดูเรื่องราวของเขาในเรซนี้</p>
             {timelineReq.status === "loading" && <Skeleton variant="row" count={5} />}
-            {timeline && <ResultsTable sessionKey={sessionKey} results={timeline.sessionResult} />}
+            {timeline && <ResultsTable sessionKey={sessionKey} results={timeline.sessionResult} year={race?.year} />}
           </section>
           <section className="card">
             <h2>พิทสต็อปเร็วสุด</h2>
             {timelineReq.status === "loading" && <Skeleton variant="row" count={3} />}
-            {timeline && <FastestPits sessionKey={sessionKey} pits={timeline.fastestPits} />}
+            {timeline && <FastestPits sessionKey={sessionKey} pits={timeline.fastestPits} year={race?.year} />}
           </section>
         </div>
       </section>

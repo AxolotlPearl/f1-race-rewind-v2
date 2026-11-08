@@ -3,13 +3,14 @@
 // ไม่มี state: ทุกอย่างมาจาก props, เหตุการณ์คลิกส่งกลับขึ้นไปผ่าน callback (onSelect / onDriverClick)
 
 import { memo } from "react";
+import DriverHover from "./DriverHover.jsx";
 
 export const TYPE_ICON = { overtake: "🔁", pit: "🔧", flag: "🚩", safety_car: "🚨", drs: "⚡", other_control: "ℹ️" };
 export const TYPE_LABEL = { overtake: "แซง", pit: "เข้าพิท", flag: "ธง", safety_car: "Safety Car", drs: "DRS", other_control: "อื่น ๆ" };
 const FLAG_COLOR = { GREEN: "#2ea043", YELLOW: "#d29922", RED: "#f85149", BLUE: "#58a6ff", CHEQUERED: "#e6edf3", CLEAR: "#2ea043" };
 const clockFormat = new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-function TimelineCard({ event, isCurrent, dim, highlight, onSelect, onDriverClick }) {
+function TimelineCard({ event, isCurrent, dim, highlight, onSelect, onDriverClick, year }) {
   const teamColor = event.drivers[0]?.teamColour ?? "888888";
   const accent = event.type === "flag" && FLAG_COLOR[event.flag] ? FLAG_COLOR[event.flag] : `#${teamColor}`;
   const lapLabel = event.lap != null ? `รอบ ${event.lap}${event.lapIsEstimated ? " (~)" : ""}` : "รอบ -";
@@ -27,6 +28,7 @@ function TimelineCard({ event, isCurrent, dim, highlight, onSelect, onDriverClic
           {event.message ?? "-"}{" "}
           {event.drivers.map((d) =>
             onDriverClick ? (
+              <DriverHover key={d.driverNumber} year={year} driverNumber={d.driverNumber}>
               <button
                 type="button"
                 key={d.driverNumber}
@@ -40,10 +42,13 @@ function TimelineCard({ event, isCurrent, dim, highlight, onSelect, onDriverClic
               >
                 {d.acronym}
               </button>
+              </DriverHover>
             ) : (
-              <span key={d.driverNumber} className="driver-chip static" style={{ color: `#${d.teamColour}` }}>
-                {d.acronym}
-              </span>
+              <DriverHover key={d.driverNumber} year={year} driverNumber={d.driverNumber}>
+                <span className="driver-chip static" style={{ color: `#${d.teamColour}` }}>
+                  {d.acronym}
+                </span>
+              </DriverHover>
             )
           )}
         </div>

@@ -42,7 +42,7 @@ function buildDriverEventIndex(events) {
   return index;
 }
 
-export default function TimelinePanel({ events, drivers, currentEventId, onSelectEvent }) {
+export default function TimelinePanel({ events, drivers, currentEventId, onSelectEvent, year }) {
   const [sortKey, setSortKey] = useState("time");
   const [driverFilter, setDriverFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -149,6 +149,7 @@ export default function TimelinePanel({ events, drivers, currentEventId, onSelec
                 dim={highlightSet != null && !belongs}
                 onSelect={onSelectEvent}
                 onDriverClick={toggleHighlight}
+                year={year}
               />
             );
           })}

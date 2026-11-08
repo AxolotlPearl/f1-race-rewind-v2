@@ -6,6 +6,8 @@
 
 import { Link } from "react-router-dom";
 import { resultTone } from "./DriverCard.jsx";
+import TeamLogo from "./TeamLogo.jsx";
+import DriverHover from "./DriverHover.jsx";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" });
 
@@ -13,7 +15,9 @@ export default function TeamCard({ team, year, onOpenDriver }) {
   return (
     <article className="profile-card">
       <header className="profile-head">
-        <div className="team-swatch" aria-hidden="true" />
+        <div className="team-swatch">
+          <TeamLogo teamName={team.teamName} colour={team.teamColour} year={year} size={56} />
+        </div>
         <div>
           <p className="profile-kicker">
             ฤดูกาล {year} · อันดับทีม {team.rank}
@@ -41,12 +45,13 @@ export default function TeamCard({ team, year, onOpenDriver }) {
         </div>
       </div>
 
-      <h3 className="profile-section-title">นักขับในทีม</h3>
+      <h3 className="profile-section-title">นักแข่งในทีม</h3>
       <div className="team-drivers">
         {team.drivers.map((d) => {
           const share = team.points > 0 ? Math.round((d.points / team.points) * 100) : 0;
           return (
-            <button key={d.driverNumber} type="button" className="team-driver" onClick={() => onOpenDriver(d.driverNumber)}>
+            <DriverHover key={d.driverNumber} year={year} driverNumber={d.driverNumber}>
+            <button type="button" className="team-driver" onClick={() => onOpenDriver(d.driverNumber)}>
               <span className="team-driver-name">
                 <strong>{d.acronym}</strong> {d.fullName} ›
               </span>
@@ -57,6 +62,7 @@ export default function TeamCard({ team, year, onOpenDriver }) {
                 <span style={{ width: `${share}%` }} />
               </span>
             </button>
+            </DriverHover>
           );
         })}
       </div>

@@ -2,12 +2,14 @@
 // ตารางผลจบการแข่ง คลิกหัวคอลัมน์เพื่อเรียง (mergeSort เอง) คลิกชื่อนักขับเพื่อไปหน้าเจาะนักขับ
 //
 // state (อยู่ในนี้เพราะมีแค่ตารางนี้ใช้): sortKey, sortAsc
-// props: sessionKey, results (จากไทม์ไลน์ที่ RacePage โหลดมา)
+// props: sessionKey, results (จากไทม์ไลน์ที่ RacePage โหลดมา), year (ใช้กับโลโก้ทีม + ป๊อปอัปโปรไฟล์)
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { mergeSort } from "../dsa/sort.js";
 import { EmptyState } from "./StatusViews.jsx";
+import DriverHover from "./DriverHover.jsx";
+import TeamLogo from "./TeamLogo.jsx";
 
 const COLUMNS = [
   { key: "position", label: "อันดับ" },
@@ -16,7 +18,7 @@ const COLUMNS = [
   { key: "points", label: "แต้ม" },
 ];
 
-export default function ResultsTable({ sessionKey, results }) {
+export default function ResultsTable({ sessionKey, results, year }) {
   const [sortKey, setSortKey] = useState("position");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -60,11 +62,15 @@ export default function ResultsTable({ sessionKey, results }) {
             <td>{r.dnf ? "DNF" : r.position ?? "-"}</td>
             <td>
               <span className="team-dot" style={{ "--dot-color": `#${r.teamColour}` }} />
-              <Link to={`/race/${sessionKey}/driver/${r.driver_number}`} title="ดูเรื่องราวของนักขับคนนี้">
-                {r.fullName}
-              </Link>
+              <DriverHover year={year} driverNumber={r.driver_number}>
+                <Link to={`/race/${sessionKey}/driver/${r.driver_number}`}>{r.fullName}</Link>
+              </DriverHover>
             </td>
-            <td>{r.teamName}</td>
+            <td>
+              <span className="team-cell">
+                <TeamLogo teamName={r.teamName} colour={r.teamColour} year={year} size={20} /> {r.teamName}
+              </span>
+            </td>
             <td>{r.points ?? 0}</td>
           </tr>
         ))}

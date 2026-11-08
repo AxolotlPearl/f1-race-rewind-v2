@@ -11,6 +11,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAsync } from "../hooks/useAsync.js";
 import TimelineCard from "../components/TimelineCard.jsx";
+import DriverHover from "../components/DriverHover.jsx";
 import { Skeleton, EmptyState, ErrorState } from "../components/StatusViews.jsx";
 
 function StatCard({ label, value, sub, color }) {
@@ -82,9 +83,11 @@ export default function DriverPage({ onVisitRace, onVisitDriver }) {
           <nav className="driver-switcher" aria-label="เปลี่ยนนักขับ">
             <span className="toolbar-label">ดูคนอื่น:</span>
             {story.otherDrivers.map((d) => (
-              <Link key={d.driverNumber} to={`/race/${sessionKey}/driver/${d.driverNumber}`} className="driver-pill" style={{ "--team-color": `#${d.teamColour}` }}>
-                {d.acronym}
-              </Link>
+              <DriverHover key={d.driverNumber} year={race?.year} driverNumber={d.driverNumber}>
+                <Link to={`/race/${sessionKey}/driver/${d.driverNumber}`} className="driver-pill" style={{ "--team-color": `#${d.teamColour}` }}>
+                  {d.acronym}
+                </Link>
+              </DriverHover>
             ))}
           </nav>
 
@@ -121,7 +124,7 @@ export default function DriverPage({ onVisitRace, onVisitDriver }) {
                 </p>
                 <ul className="timeline-list driver-events">
                   {story.events.map((e) => (
-                    <TimelineCard key={e.id} event={e} />
+                    <TimelineCard key={e.id} event={e} year={race?.year} />
                   ))}
                 </ul>
               </>

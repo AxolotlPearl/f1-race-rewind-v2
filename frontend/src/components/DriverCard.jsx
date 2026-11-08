@@ -7,6 +7,7 @@
 
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import TeamLogo from "./TeamLogo.jsx";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" });
 
@@ -25,7 +26,7 @@ function Headshot({ url, alt }) {
   return <img className="headshot" src={url} alt={alt} loading="lazy" onError={() => setFailed(true)} />;
 }
 
-export default function DriverCard({ driver, year, maxPoints, onOpenTeam }) {
+export default function DriverCard({ driver, year, maxPoints, onOpenTeam, teamLookup }) {
   const finished = driver.results.filter((r) => r.status === `P${r.position}`).length;
 
   return (
@@ -40,11 +41,15 @@ export default function DriverCard({ driver, year, maxPoints, onOpenTeam }) {
             <span className="driver-number">#{driver.driverNumber}</span> {driver.fullName}
           </h2>
           <p className="profile-teams">
-            {driver.teams.map((team) => (
-              <button key={team} type="button" className="team-link" onClick={() => onOpenTeam(team)}>
-                {team} ›
-              </button>
-            ))}
+            {driver.teams.map((team) => {
+              // สีของ "ทีมนั้น" (นักแข่งที่ย้ายทีมกลางปีมีหลายทีม สีไม่เท่ากัน) หาจาก HashTable O(1)
+              const colour = teamLookup?.get(team)?.teamColour ?? driver.teamColour;
+              return (
+                <button key={team} type="button" className="team-link" style={{ "--team-color": `#${colour}` }} onClick={() => onOpenTeam(team)}>
+                  <TeamLogo teamName={team} colour={colour} year={year} size={22} /> {team} ›
+                </button>
+              );
+            })}
             {driver.teams.length > 1 && <span className="hint-inline">ย้ายทีมระหว่างฤดูกาล</span>}
           </p>
         </div>

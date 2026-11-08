@@ -1524,3 +1524,277 @@ code {
     display: none;
   }
 }
+
+/* ---- team logo ---- */
+
+.team-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.team-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.team-logo.monogram {
+  background: var(--team-color);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.team-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-swatch .team-logo {
+  border-radius: 10px;
+}
+
+/* ---- hover mini profile ---- */
+
+.driver-hover {
+  display: inline;
+}
+
+.team-drivers .driver-hover {
+  display: block;
+}
+
+.team-drivers .driver-hover > .team-driver {
+  width: 100%;
+}
+
+.hover-card {
+  position: fixed;
+  z-index: 300; /* เหนือ modal บัตร (100) */
+  width: 260px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--team-color, var(--accent));
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  pointer-events: none; /* ไม่บังการคลิกชื่อ และไม่ทำให้ mouseleave ผิดจังหวะ */
+  animation: hover-in 0.12s ease-out;
+}
+
+.hover-card.above {
+  transform: translateY(-100%);
+}
+
+@keyframes hover-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hover-note {
+  margin: 4px 0;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.hover-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.hover-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: top;
+  background: linear-gradient(160deg, var(--team-color), var(--bg-card));
+  flex-shrink: 0;
+}
+
+.hover-photo.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.hover-name {
+  font-weight: 700;
+  line-height: 1.2;
+  font-size: 0.92rem;
+}
+
+.hover-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.hover-sub {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.hover-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 10px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.hover-stats strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin-right: 2px;
+}
+
+/* ---- drivers page ---- */
+
+.filter-input {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-width: 200px;
+}
+
+.team-group {
+  margin-bottom: 18px;
+}
+
+.team-group-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--team-color) 0 4px, var(--bg-elevated) 4px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px 8px 16px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.team-group-head:hover {
+  border-color: var(--team-color);
+}
+
+.team-group-name {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.team-group-meta {
+  margin-left: auto;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.driver-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.driver-tiles .driver-hover {
+  display: block;
+}
+
+.driver-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  min-height: 110px;
+  padding: 10px 12px 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--bg-card) 40%, color-mix(in srgb, var(--team-color) 35%, var(--bg-card)));
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.driver-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--team-color);
+}
+
+.tile-number {
+  position: absolute;
+  top: 4px;
+  right: 10px;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--team-color);
+  opacity: 0.55;
+}
+
+.tile-photo {
+  width: 88px;
+  height: 96px;
+  object-fit: cover;
+  object-position: top;
+  flex-shrink: 0;
+}
+
+.tile-photo.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  background: var(--bg-elevated);
+  border-radius: 8px 8px 0 0;
+}
+
+.tile-body {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 12px;
+  min-width: 0;
+}
+
+.tile-first {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.tile-last {
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-meta {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
