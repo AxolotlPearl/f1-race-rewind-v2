@@ -1156,3 +1156,371 @@ code {
 .center-link {
   text-align: center;
 }
+
+/* ---- scoreboard ---- */
+
+.scoreboard-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.standings-table td,
+.standings-table th {
+  padding: 8px;
+}
+
+.standings-table .num {
+  text-align: right;
+}
+
+.rank-cell {
+  font-weight: 800;
+  width: 36px;
+  color: var(--text-dim);
+}
+
+.standings-table tbody tr:nth-child(-n + 3) .rank-cell {
+  color: #d29922;
+}
+
+.points-cell {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.name-link {
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.name-link:hover {
+  color: #58a6ff;
+}
+
+.name-link.team {
+  color: var(--text-dim);
+}
+
+.name-link.team:hover {
+  color: #58a6ff;
+}
+
+.name-link.small {
+  margin-right: 8px;
+  font-weight: 700;
+  border-bottom: 1px dotted var(--text-dim);
+}
+
+.team-bar {
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--team-color);
+}
+
+.dim {
+  color: var(--text-dim);
+}
+
+/* ---- profile modal + cards ---- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+}
+
+.profile-modal {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-top: 6px solid var(--team-color, var(--accent));
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: card-in 0.18s ease-out;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-right: 36px;
+}
+
+.headshot {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: top;
+  background: linear-gradient(160deg, var(--team-color), var(--bg-card));
+  flex-shrink: 0;
+}
+
+.headshot.placeholder,
+.team-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+
+.team-swatch {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--team-color), var(--bg-card));
+  flex-shrink: 0;
+}
+
+.profile-kicker {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.profile-name {
+  margin: 2px 0 4px;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.profile-teams {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.team-link {
+  background: var(--bg-card);
+  border: 1px solid var(--team-color, var(--border));
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.team-link:hover {
+  background: var(--team-color);
+}
+
+.hint-inline {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.profile-stats div {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-stats strong {
+  font-size: 1.35rem;
+}
+
+.profile-stats span {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.points-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 64px;
+  padding: 6px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.points-bars .bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 2px 2px 0 0;
+}
+
+.profile-section-title {
+  font-size: 0.95rem;
+  margin: 12px 0 8px;
+}
+
+.profile-table-wrap {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.profile-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  cursor: default;
+}
+
+.profile-table a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--text-dim);
+}
+
+.result-badge {
+  display: inline-block;
+  min-width: 44px;
+  text-align: center;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 1px 4px 1px 0;
+  border: 0;
+  color: var(--text);
+}
+
+.result-badge.as-button {
+  cursor: pointer;
+}
+
+.tone-p1 {
+  background: #d29922;
+  color: #000;
+}
+
+.tone-podium {
+  background: #8b949e;
+  color: #000;
+}
+
+.tone-points {
+  background: #238636;
+}
+
+.tone-none {
+  background: #30363d;
+}
+
+.tone-out {
+  background: #6e2a2a;
+}
+
+.team-drivers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.team-driver {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.team-driver:hover {
+  border-color: var(--team-color);
+}
+
+.team-driver-meta {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.share-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.share-bar span {
+  display: block;
+  height: 100%;
+  background: var(--team-color);
+}
+
+@media (max-width: 560px) {
+  .profile-head {
+    align-items: flex-start;
+  }
+  .headshot {
+    width: 72px;
+    height: 72px;
+  }
+  .standings-table .hide-sm {
+    display: none;
+  }
+}

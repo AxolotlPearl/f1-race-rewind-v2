@@ -111,24 +111,30 @@ export class Graph {
 }
 
 // ---------- กราฟของเว็บนี้ ----------
-// วาดเป็นภาพได้แบบนี้ (ลูกศร = มีเมนูพาไป):
+// node 5 หน้า, edge 14 เส้น (ลูกศร = อยู่หน้าต้นทางมีเมนูพาไปหน้าปลายทาง)
 //
-//        ┌──────────── about ◄───┐
-//        ▼                       │
-//      home ──────────────► race ──────► driver
-//        ▲  ◄──────────────  │  ▲ ◄──────  │
-//        └───────────────────┼──┼──────────┘
-//                            └──┘ (driver → driver: เปลี่ยนนักขับ ทำผ่านปุ่มในหน้า ไม่ใช่ edge)
+//   home ──► race ──► driver          home ⇄ standings ⇄ race
+//   home ⇄ about    race ⇄ home       driver ──► standings, driver ──► race, driver ──► home
+//   race ──► about  standings ──► about  about ──► home
+//
+// standings (ตารางคะแนน) เชื่อมกับเกือบทุกหน้า เพราะเป็นทางเข้าที่ 2 ของเว็บ (ดูทั้งฤดูกาล แทนดูทีละเรซ)
 export const siteGraph = new Graph()
   .addNode("home", { label: "หน้าแรก", path: "/", icon: "🏠" })
+  .addNode("standings", { label: "ตารางคะแนน", path: "/standings", icon: "🏆" })
   .addNode("race", { label: "ดูเรซ", path: "/race/:sessionKey", icon: "🏁" })
   .addNode("driver", { label: "เจาะนักขับ", path: "/race/:sessionKey/driver/:driverNumber", icon: "🧑‍✈️" })
   .addNode("about", { label: "เกี่ยวกับ", path: "/about", icon: "ℹ️" })
   .addEdge("home", "race", "เรซที่ดูล่าสุด")
+  .addEdge("home", "standings")
   .addEdge("home", "about")
+  .addEdge("standings", "home", "ค้นหาเรซ")
+  .addEdge("standings", "race", "เรซที่ดูล่าสุด")
+  .addEdge("standings", "about")
   .addEdge("race", "home", "ค้นหาเรซอื่น")
   .addEdge("race", "driver")
+  .addEdge("race", "standings")
   .addEdge("race", "about")
   .addEdge("driver", "race", "กลับไปดูทั้งเรซ")
+  .addEdge("driver", "standings")
   .addEdge("driver", "home", "ค้นหาเรซอื่น")
   .addEdge("about", "home");

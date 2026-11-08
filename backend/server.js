@@ -20,6 +20,7 @@ import { buildTrackAuto } from "./lib/trackBuilder.js";
 import { getFinishedRaces, isValidYear, listYears, FIRST_YEAR, currentYear } from "./lib/races.js";
 import { searchRaces, findRace } from "./lib/searchIndex.js";
 import { buildDriverStory } from "./lib/driverStory.js";
+import { buildStandings } from "./lib/standings.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TRACKS_DIR = path.join(__dirname, "data/tracks");
@@ -97,6 +98,18 @@ app.get(
     const { total, results } = await searchRaces(q, limit);
     setCdnCache(res, 300);
     res.json({ q, total, results });
+  })
+);
+
+// ตารางคะแนนทั้งฤดูกาล (นักขับ + ทีม + ผลรายสนาม) — หน้า Scoreboard เปิดบัตรนักขับ/ทีมจากข้อมูลชุดนี้ได้ทันที
+app.get(
+  "/api/standings",
+  wrap(async (req, res) => {
+    const year = Number(req.query.year);
+    if (!isValidYear(year)) throw new ApiError(400, `ต้องระบุ year เป็นปีที่ถูกต้อง (${FIRST_YEAR}–${currentYear()})`);
+    const standings = await buildStandings(year);
+    setCdnCache(res, year === currentYear() ? 300 : 86400);
+    res.json(standings);
   })
 );
 

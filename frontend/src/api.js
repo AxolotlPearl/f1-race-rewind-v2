@@ -2,7 +2,7 @@
 // ทุกการเรียกข้อมูลของ React วิ่งไปที่ Express (/api/*) เท่านั้น — ไม่เรียก OpenF1 ตรงจาก browser
 // มี cache ใน localStorage อีกชั้น: เรซที่จบไปนานแล้วข้อมูลไม่เปลี่ยน เปิดซ้ำได้ทันทีไม่ต้องรอ network
 
-const CACHE_PREFIX = "f1rr:v4:";
+const CACHE_PREFIX = "f1rr:v5:";
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
@@ -67,6 +67,7 @@ export const api = {
   years: (signal) => cached("years", DAY_MS, "/api/years", signal),
   races: (year, signal) => cached(`races:${year}`, isCurrentSeason(year) ? 10 * MINUTE_MS : Infinity, `/api/races?year=${year}`, signal),
   search: (q, signal) => fetchJson(`/api/search?q=${encodeURIComponent(q)}&limit=8`, { signal }),
+  standings: (year, signal) => cached(`standings:${year}`, isCurrentSeason(year) ? 10 * MINUTE_MS : Infinity, `/api/standings?year=${year}`, signal),
   raceInfo: (sessionKey, signal) => cached(`info:${sessionKey}`, DAY_MS, `/api/race/${sessionKey}/info`, signal),
   timeline: (sessionKey, dateEnd, signal) => cached(`race:${sessionKey}`, raceMaxAge(dateEnd), `/api/race/${sessionKey}`, signal),
   driver: (sessionKey, driverNumber, signal) =>

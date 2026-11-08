@@ -98,6 +98,20 @@ export function getSessionResult(sessionKey) {
   return fetchOpenF1(`/session_result?session_key=${encodeURIComponent(sessionKey)}`);
 }
 
+/**
+ * ตารางคะแนนทั้งฤดูกาล: OpenF1 กรองด้วยช่วง session_key ได้ (>=, <=) จึงดึงผลทุก session ของปีได้ใน
+ * request เดียว แทนการยิงทีละเรซ ~30 ครั้ง (ซึ่งกินโควตา 30 req/นาทีหมดในครั้งเดียว ผู้ใช้ต้องรอ 1 นาที+)
+ * ผลที่ได้มี session ประเภทอื่น (ซ้อม/ควอลิฟาย) ปนมาด้วย — ฝั่ง lib/standings.js กรองเหลือแค่ Race/Sprint
+ */
+export function getSessionResultRange(fromKey, toKey, ttlMs) {
+  return fetchOpenF1(`/session_result?session_key>=${Number(fromKey)}&session_key<=${Number(toKey)}`, { ttlMs });
+}
+
+/** นักขับของทุก session ในช่วง — ต้องรู้ทีม "ของเรซนั้น" เพราะนักขับย้ายทีมกลางฤดูกาลได้ */
+export function getDriversRange(fromKey, toKey, ttlMs) {
+  return fetchOpenF1(`/drivers?session_key>=${Number(fromKey)}&session_key<=${Number(toKey)}`, { ttlMs });
+}
+
 // ใช้ตอนสร้างเส้นสนาม (ทั้ง scripts/build-track.js แบบ offline และ /api/track สำหรับสนามใหม่ที่ยัง
 // ไม่มีไฟล์ precompute) เพื่อรู้ circuit_key/date_start ของเรซที่จะดึงพิกัดมาสร้างเส้นสนาม
 export function getSessionInfo(sessionKey) {

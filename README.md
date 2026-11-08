@@ -10,7 +10,7 @@
 | **คลิปนำเสนอ** | _(ใส่ลิงก์ YouTube แบบ Unlisted)_ |
 
 เว็บสำหรับ "ดูย้อนหลัง" ว่าเรซ Formula 1 แต่ละสนามเกิดอะไรขึ้น: ไทม์ไลน์การแซง/เข้าพิท/ธง, แผนที่สนามที่รถวิ่งจริง
-และ (ใหม่) หน้าเจาะนักขับรายคน + ค้นหาเรซข้ามทุกฤดูกาล
+และ (ใหม่) หน้าเจาะนักขับรายคน, ค้นหาเรซข้ามทุกฤดูกาล และตารางคะแนนทั้งฤดูกาลพร้อมบัตรนักขับ/บัตรทีม
 
 ---
 
@@ -52,9 +52,10 @@ npm test
 frontend/                React + Vite
   src/Graph.js           ★ Graph (adjacency list + BFS) เชื่อมเมนูกับหน้า
   src/App.jsx            Routes + state ที่ใช้ร่วมกันหลายหน้า
-  src/pages/             HomePage, RacePage, DriverPage, AboutPage, NotFoundPage
+  src/pages/             HomePage, ScoreboardPage, RacePage, DriverPage, AboutPage, NotFoundPage
   src/components/        NavBar, SearchBox, RaceCard, SummaryBar, TrackMap, TimelinePanel,
-                         TimelineCard, ResultsTable, FastestPits, StatusViews
+                         TimelineCard, ResultsTable, FastestPits, StatusViews,
+                         ProfileModal, DriverCard, TeamCard (บัตรในหน้าตารางคะแนน)
   src/hooks/useAsync.js  hook โหลดข้อมูล (loading/empty/error/success + กันยิงซ้ำ)
   src/player/MapPlayer.js เครื่องเล่นตำแหน่งรถบนแผนที่ (requestAnimationFrame)
   src/dsa/               mergeSort, HashTable, Queue (ชุดเดียวกับ backend)
@@ -63,6 +64,7 @@ backend/                 Express
   server.js              routes + validate + error middleware
   lib/Trie.js            ★ Trie สำหรับค้นหาเรซ (DSA ใหม่)
   lib/searchIndex.js     ดัชนีค้นหาข้ามทุกปี
+  lib/standings.js       ★ ตารางคะแนนนักขับ/ทีมทั้งฤดูกาล + countback
   lib/driverStory.js     ★ สรุปเรื่องราวนักขับ (ประมวลผลที่ server)
   lib/races.js           รายชื่อเรซที่แข่งจบแล้ว
   lib/timeline.js        รวม 5 endpoint เป็นไทม์ไลน์เดียว (merge sort)
@@ -83,8 +85,8 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | ชื่อ-สกุล | รหัสนักศึกษา | ชิ้นงานที่รับผิดชอบ (ไฟล์ / component / route / DSA) | ช่วงที่นำเสนอในคลิป |
 |---|---|---|---|
 | _(ชื่อ 1)_ | _(รหัส)_ | **React**: `App.jsx`, `NavBar.jsx`, `Graph.js` (Graph + BFS), `useAsync.js`, `RacePage.jsx`, `TimelinePanel.jsx` | ช่วง 4 อธิบายโค้ด React |
-| _(ชื่อ 2)_ | _(รหัส)_ | **UX**: `HomePage.jsx`, `SearchBox.jsx`, `DriverPage.jsx`, `StatusViews.jsx`, `TrackMap.jsx` + `MapPlayer.js`, ตาราง Before→After | ช่วง 2 จากงานแรกสู่งานนี้, ช่วง 3 Demo |
-| _(ชื่อ 3)_ | _(รหัส)_ | **Express / DSA**: `server.js` (validate, error middleware, routes), `lib/Trie.js`, `lib/searchIndex.js`, `lib/driverStory.js`, `test/trie.test.js` | ช่วง 5 Express และ DSA |
+| _(ชื่อ 2)_ | _(รหัส)_ | **UX**: `HomePage.jsx`, `SearchBox.jsx`, `DriverPage.jsx`, `ScoreboardPage.jsx` + `DriverCard`/`TeamCard`/`ProfileModal`, `StatusViews.jsx`, `TrackMap.jsx` + `MapPlayer.js`, ตาราง Before→After | ช่วง 2 จากงานแรกสู่งานนี้, ช่วง 3 Demo |
+| _(ชื่อ 3)_ | _(รหัส)_ | **Express / DSA**: `server.js` (validate, error middleware, routes), `lib/Trie.js`, `lib/searchIndex.js`, `lib/driverStory.js`, `lib/standings.js`, `test/trie.test.js`, `test/standings.test.js` | ช่วง 5 Express และ DSA |
 
 ---
 
@@ -130,6 +132,13 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
       ├─ DriverPage ◄─ props: onVisitRace, onVisitDriver (callback ขึ้นไปหา App)
       │  ├─ StatCard ×5   ◄─ props: label, value, sub, color
       │  └─ TimelineCard ×n ◄─ props: event   (ใช้ component เดียวกับหน้าเรซ)
+      ├─ ScoreboardPage                                  (ปี/แท็บ/บัตรที่เปิด อยู่ใน URL ไม่ใช่ state)
+      │  └─ ProfileModal ◄─ props: title, accent, onClose (callback ปิดบัตร)
+      │     ├─ DriverCard ◄─ props: driver, year, maxPoints
+      │     │             ──► callback onOpenTeam(teamName) ขึ้นไปหา ScoreboardPage (สลับเป็นบัตรทีม)
+      │     │   └─ Headshot ◄─ props: url, alt               state: failed
+      │     └─ TeamCard   ◄─ props: team, year
+      │                   ──► callback onOpenDriver(driverNumber) ขึ้นไปหา ScoreboardPage (สลับเป็นบัตรนักขับ)
       └─ AboutPage  ◄─ props: graph
 (ทุกหน้าใช้ Skeleton / EmptyState / ErrorState จาก StatusViews.jsx)
 ```
@@ -144,6 +153,9 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
   ถ้าเก็บใน `RacePage` ค่าจะหายทันทีที่ออกจากหน้า (unmount)
 - **sort/filter อยู่ใน `TimelinePanel`, การเรียงตารางอยู่ใน `ResultsTable`** — มี component เดียวที่ใช้ ไม่ต้องยกขึ้นไป
   ยกขึ้นไปจะทำให้ `RacePage` re-render ทั้งหน้า (รวมแผนที่) ทุกครั้งที่กดเรียง โดยไม่จำเป็น
+- **บัตรที่เปิดอยู่ในหน้าตารางคะแนนอยู่ใน URL** (`?driver=1` / `?team=McLaren`) ผ่าน `useSearchParams` — DriverCard กับ TeamCard
+  ไม่ได้เปิดกันเองโดยตรง แต่ส่ง callback `onOpenTeam`/`onOpenDriver` ขึ้นไปให้ `ScoreboardPage` เปลี่ยน URL แล้ว render บัตรใบใหม่
+  ผลคือแชร์ลิงก์บัตรได้ และปุ่ม back = ย้อนกลับไปบัตรก่อนหน้า (นักขับ → ทีม → back → นักขับ)
 - **นักขับที่ดูอยู่ (`DriverPage`) ไม่ได้เป็น state เลย** — อ่านจาก URL (`useParams`) เพราะ URL คือแหล่งความจริงอยู่แล้ว
   (แชร์ลิงก์/กด back/รีเฟรชได้) เก็บซ้ำเป็น state เสี่ยงไม่ตรงกับ URL
 
@@ -166,11 +178,12 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | `driverFilter` | นักขับที่กรอง | `TimelinePanel` | ผู้ใช้เลือก dropdown | controlled select + กรองการ์ด |
 | `typeFilter` | ประเภทเหตุการณ์ที่กรอง | `TimelinePanel` | ผู้ใช้เลือก dropdown / ปุ่ม "ล้างตัวกรอง" | controlled select + กรองการ์ด |
 | `highlightedDriver` | นักขับที่คลิกชิปเพื่อไฮไลต์ | `TimelinePanel` | ผู้ใช้คลิกชื่อย่อนักขับ (คลิกซ้ำ = ยกเลิก) | การ์ดต้องสว่าง/จางตามค่านี้ |
+| `failed` | รูปนักขับโหลดไม่สำเร็จหรือไม่ | `Headshot` (ใน `DriverCard`) | event `onError` ของ `<img>` | ต้อง re-render เป็นตัวอักษรย่อแทนรูปแตก |
 | `sortKey`, `sortAsc` | คอลัมน์และทิศทางการเรียงตารางผล | `ResultsTable` | ผู้ใช้คลิกหัวคอลัมน์ | ลำดับแถวต้องเปลี่ยน |
 | `state` `{status, data, error}` | ผลการโหลดข้อมูล 4 สถานะ | `useAsync` (ทุกหน้าที่โหลดข้อมูล) | effect ตั้งเป็น loading → success/empty/error | UI ต้องแสดงสถานะครบ loading/empty/error/success |
 | `attempt` | ตัวนับการกด "ลองใหม่" | `useAsync` | ผู้ใช้กดปุ่มลองใหม่ (`reload()`) | อยู่ใน deps ของ effect → ยิงใหม่เฉพาะตอนผู้ใช้สั่ง |
 
-**ค่าที่ตั้งใจไม่เก็บเป็น state** (คำนวณจาก state/props ได้): `shownYear`, `visibleEvents`, `driverEventIndex`,
+**ค่าที่ตั้งใจไม่เก็บเป็น state** (คำนวณจาก state/props ได้ หรืออยู่ใน URL แล้ว): ปี/แท็บ/บัตรที่เปิดในหน้าตารางคะแนน (`useSearchParams`), `lookup` HashTable ของบัตร (`useMemo`), `shownYear`, `visibleEvents`, `driverEventIndex`,
 `pathD` ของเส้นสนาม, `params`/`labels` ของ NavBar, นักขับที่ดูอยู่ (มาจาก URL) — ถ้าเก็บซ้ำต้องคอย sync ทุกครั้ง เสี่ยงข้อมูลไม่ตรงกัน
 
 ---
@@ -189,6 +202,7 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | `TimelinePanel` | เลื่อนกล่องไทม์ไลน์ให้การ์ดปัจจุบันอยู่บนสุด | `[currentEventId]` | เมื่อเวลาบนแผนที่ข้ามไปเหตุการณ์ใหม่ (ไม่กี่วินาทีครั้ง ไม่ใช่ทุกเฟรม) |
 | `TrackMap` | สร้าง `MapPlayer` แล้ว `load()` เรซ; cleanup = `player.destroy()` (หยุด animation + ยกเลิก request) | `[track, timeline, race, sessionKey]` | เมื่อเส้นสนามโหลดเสร็จ หรือเปลี่ยนเรซ |
 | `TrackMap` | สั่ง `player.playEvent()` | `[playRequest]` | ผู้ใช้คลิกการ์ดเหตุการณ์ |
+| `ProfileModal` | ฟังปุ่ม Esc, ล็อกการเลื่อนหน้าด้านหลัง, ย้าย focus ไปปุ่มปิด; cleanup = เอา listener ออก + คืนการเลื่อนหน้า | `[onClose]` (มาจาก `useCallback` จึงไม่เปลี่ยนทุก render) | ตอนบัตรเปิด (mount) และคืนค่าตอนบัตรปิด (unmount) |
 
 **กัน loop ไม่รู้จบ / เรียก API ซ้ำโดยไม่จำเป็นอย่างไร**
 
@@ -207,14 +221,15 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 
 ไฟล์ [frontend/src/Graph.js](frontend/src/Graph.js) — เขียน Graph เอง (adjacency list เก็บใน HashTable ของเราเอง) ไม่ใช่ไลบรารีวาดกราฟ
 
-- **node = หน้า** 4 หน้า: `home` (/), `race` (/race/:sessionKey), `driver` (/race/:sessionKey/driver/:driverNumber), `about` (/about)
-- **edge = เมนูที่พาไปหน้าอื่น** (directed) 8 เส้น:
+- **node = หน้า** 5 หน้า: `home` (/), `standings` (/standings), `race` (/race/:sessionKey), `driver` (/race/:sessionKey/driver/:driverNumber), `about` (/about)
+- **edge = เมนูที่พาไปหน้าอื่น** (directed) 14 เส้น:
 
 | จากหน้า | เมนู (edge →) |
 |---|---|
-| home | → เรซที่ดูล่าสุด (race), → เกี่ยวกับ (about) |
-| race | → ค้นหาเรซอื่น (home), → เจาะนักขับ (driver), → เกี่ยวกับ (about) |
-| driver | → กลับไปดูทั้งเรซ (race), → ค้นหาเรซอื่น (home) |
+| home | → เรซที่ดูล่าสุด (race), → ตารางคะแนน (standings), → เกี่ยวกับ (about) |
+| standings | → ค้นหาเรซ (home), → เรซที่ดูล่าสุด (race), → เกี่ยวกับ (about) |
+| race | → ค้นหาเรซอื่น (home), → เจาะนักขับ (driver), → ตารางคะแนน (standings), → เกี่ยวกับ (about) |
+| driver | → กลับไปดูทั้งเรซ (race), → ตารางคะแนน (standings), → ค้นหาเรซอื่น (home) |
 | about | → หน้าแรก (home) |
 
 **Graph ช่วยผู้ใช้อย่างไร** ([NavBar.jsx](frontend/src/components/NavBar.jsx))
@@ -238,7 +253,7 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
                                   ├─ cache                HashTable module-scope + Cache-Control ให้ CDN
                                   ├─ validate             year / sessionKey / driverNumber / ช่วงเวลา / คำค้น → 400
                                   ├─ ประมวลผล             รวม 5 endpoint เป็นไทม์ไลน์ (merge sort), Trie ค้นหา,
-                                  │                       สรุปนักขับ, สร้างเส้นสนามจาก GPS
+                                  │                       สรุปนักขับ, ตารางคะแนนทั้งปี, สร้างเส้นสนามจาก GPS
                                   └─ error middleware     OpenF1 ล่ม → 502 + ข้อความภาษาไทย, server ไม่ล่ม
 ```
 
@@ -248,6 +263,7 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | `GET /api/years` | ปีที่เลือกได้ (2023 → ปีปัจจุบัน คำนวณจากวันที่) |
 | `GET /api/races?year=` | เรซที่แข่งจบแล้วของปีนั้น (validate ปี) |
 | `GET /api/search?q=` | **ใหม่** ค้นหาเรซข้ามทุกปีด้วย Trie |
+| `GET /api/standings?year=` | **ใหม่** ตารางคะแนนนักขับ + ทีมทั้งฤดูกาล พร้อมผลรายสนาม (OpenF1 2 request ต่อปี) |
 | `GET /api/race/:key/info` | **ใหม่** หัวเรื่องเรซ (ให้ deep link/รีเฟรชรู้ว่าเป็นเรซอะไร) |
 | `GET /api/race/:key` | ไทม์ไลน์ + ผลจบ + พิทเร็วสุด + สรุป |
 | `GET /api/race/:key/driver/:num` | **ใหม่** เรื่องราวนักขับ (ส่งเฉพาะ event ของคนนั้น) |
@@ -282,6 +298,23 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 - **ทำไมฝั่ง Express**: ต้องใช้รายชื่อเรซทุกปี (8 request ไป OpenF1) — ทำที่ server ครั้งเดียวแชร์ให้ผู้ใช้ทุกคน ดีกว่าให้ทุก browser โหลดเองแล้วสร้าง Trie เอง
 - **ทำไมไม่ใช้วิธีอื่น**: sorted array + binary search หา prefix ได้ O(P log N) แต่ต้องทำต่อคำ และค้น "คำที่อยู่กลางชื่อ" (เช่น "vegas" ใน "Las Vegas Grand Prix") ต้องเก็บทุกคำแยกอยู่ดี — Trie ตอบโจทย์ prefix ตรงตัวกว่า
 
+### ตารางคะแนน + บัตรนักขับ/ทีม — ประมวลผลที่ Express
+
+[backend/lib/standings.js](backend/lib/standings.js)
+
+- **ถ้ายิงทีละเรซ**: `/session_result` ~30 request ต่อฤดูกาล (2024 มี 24 Race + 6 Sprint) แต่ OpenF1 ให้ 30 req/นาที
+  ผู้ใช้ต้องรอนาน และกินโควตาของผู้ใช้คนอื่นหมด
+- **ที่ทำ**: OpenF1 กรองด้วยช่วง `session_key>=…&session_key<=…` ได้ → ดึงผล + นักขับทั้งปีใน **2 request** (~1.7 วินาที วัดจริงปี 2024)
+  แล้วกรองเหลือ Race/Sprint ด้วย HashTable `sessionKey → เรซ` O(1) ต่อแถว
+- **รวมคะแนน**: วนผลทุกแถวครั้งเดียว O(R) (R ≈ 2,000 แถว) สะสมลง HashTable `driverNumber → สถิติ` และ `teamName → สถิติ`
+  ทีมของนักขับใช้ข้อมูล "ของเรซนั้น" (`sessionKey:driverNumber`) เพราะย้ายทีมกลางปีได้ (เช่น 2025 Tsunoda: Racing Bulls → Red Bull Racing)
+  คะแนนจึงถูกนับให้ทีมที่ขับจริงในเรซนั้น
+- **จัดอันดับ**: mergeSort ด้วย `compareStanding` — คะแนนมากก่อน ถ้าเท่ากันใช้ **countback แบบ F1** (ชนะมากกว่า → ที่ 2 มากกว่า → …)
+  O(n log n · P) โดย n ≤ ~25, P ≤ 30 — merge sort เป็น stable sort ถ้าเท่ากันทุกอย่างลำดับไม่สลับไปมา
+- **ตรวจผล**: ปี 2024 ได้ VER 437, NOR 374, LEC 356 และ McLaren 666, Ferrari 652, Red Bull 589 ตรงกับผลชิงแชมป์จริง
+- **ฝั่ง React**: ส่งผลรายสนามของทุกคนมาครั้งเดียว (~260KB ก่อนบีบอัด) → เปิด/สลับบัตรนักขับ ↔ ทีม **ไม่ต้องยิง API เลย**
+  หาคน/ทีมจาก URL ด้วย HashTable (`useMemo` สร้างครั้งเดียวต่อปี) O(1)
+
 ### Driver story — ประมวลผลที่ Express
 
 [backend/lib/driverStory.js](backend/lib/driverStory.js) วนไทม์ไลน์ครั้งเดียว O(E) นับแซง/โดนแซง, HashTable นับคู่ปรับ,
@@ -296,6 +329,7 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | ดูเรซที่รู้ชื่อสนาม | เลือกปี → เปิด dropdown → เลื่อนหา → เลือก (4) | พิมพ์ 3 ตัว → Enter (2) |
 | กลับมาดูเรซเดิม | เลือกปี → หาเรซใหม่ | การ์ด "ดูต่อจากครั้งก่อน" / เมนู "เรซที่ดูล่าสุด" (1) หรือเปิดลิงก์เดิม |
 | ดูผลงานนักขับคนเดียว | เลือก dropdown นักขับ → ไล่อ่าน/นับเอง | คลิกชื่อในตารางผล (1) → เห็นสรุปทันที |
+| ดูคะแนนทั้งฤดูกาลของนักขับ/ทีม | ไม่มี (ต้องเปิดทีละเรซ ~30 เรซ) | เมนู 🏆 ตารางคะแนน → คลิกชื่อ (2) → บัตรมีผลทุกสนาม |
 | แชร์เรซให้เพื่อน | ทำไม่ได้ (URL เดียว) | คัดลอก URL |
 
 ## สถานะ loading / empty / error / success

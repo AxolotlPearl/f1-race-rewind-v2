@@ -55,11 +55,19 @@ export default function DriverPage({ onVisitRace, onVisitDriver }) {
               <span className="driver-number">#{story.driver.driverNumber}</span> {story.driver.fullName}
             </h1>
             <p className="page-sub">
-              {story.driver.teamName}
+              {race ? (
+                <Link to={`/standings?year=${race.year}&team=${encodeURIComponent(story.driver.teamName)}`} title="ดูบัตรทีมทั้งฤดูกาล">
+                  {story.driver.teamName}
+                </Link>
+              ) : (
+                story.driver.teamName
+              )}
               {race && (
                 <>
                   {" "}
                   · <Link to={`/race/${sessionKey}`}>{race.meetingName} {race.year}{race.sessionName === "Sprint" ? " (Sprint)" : ""}</Link>
+                  {" "}
+                  · <Link to={`/standings?year=${race.year}&driver=${driverNumber}`}>🏆 ผลทั้งฤดูกาล {race.year}</Link>
                 </>
               )}
             </p>

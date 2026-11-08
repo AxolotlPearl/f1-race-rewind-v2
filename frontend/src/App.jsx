@@ -14,6 +14,7 @@ import HomePage from "./pages/HomePage.jsx";
 import RacePage from "./pages/RacePage.jsx";
 import DriverPage from "./pages/DriverPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
+import ScoreboardPage from "./pages/ScoreboardPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 const RECENT_KEY = "f1rr:recent";
@@ -81,6 +82,7 @@ export default function App() {
             path="/race/:sessionKey/driver/:driverNumber"
             element={<DriverPage onVisitRace={handleVisitRace} onVisitDriver={handleVisitDriver} />}
           />
+          <Route path="/standings" element={<ScoreboardPage />} />
           <Route path="/about" element={<AboutPage graph={siteGraph} />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
