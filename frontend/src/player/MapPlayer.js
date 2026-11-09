@@ -186,12 +186,12 @@ export class MapPlayer {
       const label = document.createElementNS(SVG_NS, "text");
       label.setAttribute("y", "-11");
       label.textContent = d.acronym;
-      const badge = document.createElementNS(SVG_NS, "text");
-      badge.setAttribute("class", "pit-badge");
-      badge.setAttribute("y", "18");
+      // อยู่ในพิท = วงแหวนสีเหลืองรอบจุด (เดิมเป็นตัวหนังสือ "PIT" ใต้จุด ซึ่งทับกันอ่านไม่ออกตอนเข้าพิทหลายคัน)
+      const badge = document.createElementNS(SVG_NS, "circle");
+      badge.setAttribute("class", "pit-ring");
+      badge.setAttribute("r", "11");
       badge.setAttribute("opacity", "0");
-      badge.textContent = "🔧 PIT";
-      g.append(circle, label, badge);
+      g.append(badge, circle, label);
       group.append(g);
       return { driverNumber: d.driverNumber, acronym: d.acronym, el: g, badge, lastTransform: null, lastOpacity: "0", lastBadge: "0" };
     });
@@ -343,7 +343,11 @@ export class MapPlayer {
     if (key === this.lastPitKey) return;
     this.lastPitKey = key;
     lane.classList.toggle("active", inPit.length > 0);
-    if (this.dom.pitLabel) this.dom.pitLabel.textContent = inPit.length > 0 ? `PIT · ${inPit.join(" ")}` : "PIT";
+    const list = this.dom.pitList;
+    if (list) {
+      list.hidden = inPit.length === 0;
+      list.textContent = `🔧 ในพิท: ${inPit.join(" · ")}`;
+    }
   }
 
   /** อัปเดต scrubber + นาฬิกาเฉพาะตอนวินาทีเปลี่ยน (เขียนค่า <input range> แพง ไม่ต้องทำทุกเฟรม) */

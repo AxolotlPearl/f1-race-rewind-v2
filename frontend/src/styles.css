@@ -2430,9 +2430,26 @@ main:has(.race-page) {
 }
 
 .pit-lane.active text {
-  font-size: 12px;
   fill: #ffc233;
   opacity: 1;
+}
+
+.car-dot .pit-ring {
+  fill: none;
+  stroke: #ffc233;
+  stroke-width: 2.5;
+  transition: opacity 0.15s ease;
+}
+
+.pit-chip {
+  background: rgba(255, 194, 51, 0.15);
+  border: 1px solid #ffc233;
+  color: #ffd866;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* แถบสถานะสนาม + อากาศ เหนือแผนที่ */

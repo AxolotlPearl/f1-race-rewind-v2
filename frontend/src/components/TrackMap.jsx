@@ -59,7 +59,7 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange, o
     return { d: pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" "), label };
   }, [track]);
   const pitLaneRef = useRef(null);
-  const pitLabelRef = useRef(null);
+  const pitListRef = useRef(null);
 
   // effect 1: สร้าง MapPlayer เมื่อ DOM ของแผนที่พร้อม (track โหลดเสร็จ) แล้ว load เรซเข้าไป
   // deps: [track, timeline, race] — เปลี่ยนเรซ/สนาม = ทำลายตัวเก่า (cleanup) สร้างใหม่ ไม่มี player ค้างยิง API
@@ -72,7 +72,7 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange, o
         clockLabel: clockRef.current,
         bufferFill: bufferRef.current,
         pitLane: pitLaneRef.current,
-        pitLabel: pitLabelRef.current,
+        pitList: pitListRef.current,
       },
       { onStatus: setStatus, onEventChange: (id) => onEventChangeRef.current?.(id), onTime: (ms) => onTimeChangeRef.current?.(ms) }
     );
@@ -119,13 +119,15 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange, o
         <span className="map-status-label" aria-live="polite">
           {status.statusText}
         </span>
+        {/* รายชื่อคนที่อยู่ในพิท — MapPlayer เขียนข้อความ/ซ่อนเองผ่าน ref (อยู่นอกแผนที่ จึงไม่ทับจุดรถ) */}
+        <span ref={pitListRef} className="pit-chip" hidden />
       </div>
       <svg className="track-svg" viewBox={`0 0 ${track.viewBox.width} ${track.viewBox.height}`} preserveAspectRatio="xMidYMid meet">
         {pitLane && (
-          // ไม่มีใครอยู่ในพิท = เส้นบางสีมืด · มีคนเข้าพิท = MapPlayer ใส่ class "active" ให้เส้นขยายสว่าง + ชื่อคนในพิท
+          // ไม่มีใครอยู่ในพิท = เส้นบางสีมืด · มีคนเข้าพิท = MapPlayer ใส่ class "active" ให้เส้นขยายสว่าง
           <g className="pit-lane" ref={pitLaneRef}>
             <path d={pitLane.d} />
-            <text ref={pitLabelRef} x={pitLane.label.x} y={pitLane.label.y} dominantBaseline="middle">
+            <text x={pitLane.label.x} y={pitLane.label.y} dominantBaseline="middle">
               PIT
             </text>
           </g>
