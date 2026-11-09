@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getSeason } from "../seasonCache.js";
 import TeamLogo from "./TeamLogo.jsx";
+import { headshot } from "../photo.js";
 
 const OPEN_DELAY_MS = 300;
 const POPOVER_HEIGHT = 170;
@@ -85,7 +86,7 @@ export default function DriverHover({ year, driverNumber, children }) {
             {info.status === "success" && (
               <>
                 <div className="hover-head">
-                  {d.headshotUrl ? <img className="hover-photo" src={d.headshotUrl} alt="" /> : <div className="hover-photo placeholder">{d.acronym}</div>}
+                  {d.headshotUrl ? <img className="hover-photo" src={headshot(d.headshotUrl)} alt="" /> : <div className="hover-photo placeholder">{d.acronym}</div>}
                   <div>
                     <div className="hover-name">
                       <span className="driver-number">#{d.driverNumber}</span> {d.fullName}

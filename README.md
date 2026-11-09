@@ -132,12 +132,16 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
       │  │                                                   state: query, debounced, activeIndex, open
       │  └─ RaceCard ×n  ◄─ props: race, featured
       ├─ RacePage   ◄─ props: onVisitRace (callback ขึ้นไปหา App)
-      │  │                                                   state: currentEventId, playRequest
+      │  │                                    state: currentEventId, playRequest  · URL: ?tab=
       │  ├─ SummaryBar   ◄─ props: sessionKey, summary, dataAvailability
-      │  ├─ HighlightVideo ◄─ props: race
-      │  ├─ TrackMap     ◄─ props: race, timeline, playRequest
-      │  │               ──► callback onEventChange(eventId) ขึ้นไปหา RacePage
-      │  │                                                   state: status {playing, speed, statusText}
+      │  ├─ RaceStage    ◄─ props: race, timeline, playRequest, currentEventId
+      │  │  │                                                state: timeMs, focusDriver
+      │  │  ├─ TrackMap  ◄─ props: race, timeline, playRequest, focusDriver
+      │  │  │            ──► callback onEventChange(eventId) ขึ้นไปหา RacePage, onTimeChange(ms) ขึ้นไปหา RaceStage
+      │  │  │                                                state: status {playing, speed, statusText}
+      │  │  └─ RaceLeaderboard ◄─ props: model, drivers, timeMs, focusDriver
+      │  │               ──► callback onFocus(driverNumber)  state: gapMode
+      │  ├─ (แท็บ) HighlightVideo ◄─ props: race
       │  ├─ TimelinePanel◄─ props: events, drivers, currentEventId
       │  │  │            ──► callback onSelectEvent(event) ขึ้นไปหา RacePage
       │  │  │                                                state: sortKey, driverFilter, typeFilter, highlightedDriver
@@ -193,6 +197,10 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | `status` | สถานะ OpenF1 จาก `/api/status` | `StatusBanner` | เช็คทุก 1 นาที + ทันทีเมื่อ request ใดได้ 503 | เลือกว่าจะแสดงแถบแบบไหน/ซ่อน |
 | `savedAt` | เวลาบันทึกของข้อมูลสำรองที่เก่าที่สุดที่หน้าเว็บได้รับ | `StatusBanner` | event `stale` จาก `api.js` (header `X-Data-Saved-At`), ล้างเมื่อ OpenF1 กลับมา | แสดง "📦 ข้อมูลที่บันทึกไว้เมื่อ …" |
 | `dismissed` | ผู้ใช้กดปิดแถบแล้ว | `StatusBanner` | ปุ่ม ✕ / รีเซ็ตเมื่อสถานะเปลี่ยน | ซ่อนแถบ แต่เด้งกลับถ้าสถานะเปลี่ยน |
+| `timeMs` | เวลาที่แผนที่เล่นอยู่ | `RaceStage` | `MapPlayer` เรียก `onTime` ไม่เกิน 4 ครั้ง/วินาทีตอนเล่น (ทันทีเมื่อกระโดด/ลาก) | `RaceLeaderboard` ต้องคำนวณอันดับ/ช่องว่าง/ยาง ณ เวลานั้นใหม่ — วางไว้ที่ `RaceStage` ไม่ใช่ `RacePage` เพื่อไม่ให้ไทม์ไลน์หลายร้อยการ์ด re-render ตาม |
+| `focusDriver` | นักขับที่คลิกใน leaderboard | `RaceStage` | ผู้ใช้คลิกแถว (คลิกซ้ำ = ยกเลิก) | แถวนั้นเด่น แถวอื่นจาง + `TrackMap` สั่ง `player.setFocus()` ให้รถคันนั้นสว่าง (แชร์ระหว่างลูก 2 ตัว) |
+| `gapMode` | แสดงช่องว่างเวลาแบบ "ห่างผู้นำ" หรือ "ห่างคันหน้า" | `RaceLeaderboard` | ผู้ใช้กดปุ่มที่หัวตาราง | คอลัมน์ช่องว่างเวลาต้องเปลี่ยน |
+| แท็บหน้าเรซ (`?tab=`) | แท็บที่เปิดอยู่ (ผลจบ/เหตุการณ์/พิท/คลิป) | `RacePage` ผ่าน `useSearchParams` | ผู้ใช้กดแท็บ | **ไม่ใช้ useState** — เก็บใน URL ให้แชร์ลิงก์/กด back แล้วได้แท็บเดิม |
 | `showPast` | ปฏิทินแสดงทั้งฤดูกาลหรือเฉพาะสนามที่ยังไม่แข่ง | `HomePage` | ผู้ใช้กดปุ่ม "แสดงทั้งฤดูกาล" | รายการในปฏิทินต้องเปลี่ยน (ค่าเริ่มต้นย่อ ให้หน้าแรกสั้น) |
 | `now` | เวลาปัจจุบัน (ms) | `NextRaceCountdown` | `setInterval` ทุก 1 วินาที | ตัวเลขนับถอยหลังต้อง re-render ทุกวินาที ("เหลืออีกเท่าไร" คำนวณจาก now จึงไม่เก็บซ้ำ) |
 | `view` (sidebar) | แท็บนักแข่ง/ทีมของแถบขวาหน้าแรก | `StandingsSidebar` | ผู้ใช้กดแท็บ | สลับรายการที่แสดง — ใช้แค่ในแถบนี้ จึงไม่ยกขึ้นไป |
@@ -241,6 +249,7 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | `TimelinePanel` | เลื่อนกล่องไทม์ไลน์ให้การ์ดปัจจุบันอยู่บนสุด | `[currentEventId]` | เมื่อเวลาบนแผนที่ข้ามไปเหตุการณ์ใหม่ (ไม่กี่วินาทีครั้ง ไม่ใช่ทุกเฟรม) |
 | `TrackMap` | สร้าง `MapPlayer` แล้ว `load()` เรซ; cleanup = `player.destroy()` (หยุด animation + ยกเลิก request) | `[track, timeline, race, sessionKey]` | เมื่อเส้นสนามโหลดเสร็จ หรือเปลี่ยนเรซ |
 | `TrackMap` | สั่ง `player.playEvent()` | `[playRequest]` | ผู้ใช้คลิกการ์ดเหตุการณ์ |
+| `TrackMap` | สั่ง `player.setFocus(focusDriver)` | `[focusDriver, track]` | ผู้ใช้คลิกแถวใน leaderboard (และตอนสร้าง player ใหม่ ให้ได้ค่าเดิม) |
 | `DriverHover` | โหลดตารางคะแนนของปีนั้นจาก `seasonCache` แล้วหานักแข่งด้วย HashTable; cleanup = ตั้ง `cancelled` กันผลมาช้าหลังปิด | `[open, year, driverNumber]` | ตอนป๊อปอัปเปิดเท่านั้น (ชื่อบนหน้าเป็นร้อยชื่อไม่ได้โหลดทุกชื่อตั้งแต่แรก) |
 | `DriverHover` | ล้าง timer หน่วงเวลาตอน component หายไป | `[]` | unmount (เช่นเปลี่ยนหน้าระหว่างกำลังจะเปิด) |
 | `ProfileModal` | ฟังปุ่ม Esc, ล็อกการเลื่อนหน้าด้านหลัง, ย้าย focus ไปปุ่มปิด; cleanup = เอา listener ออก + คืนการเลื่อนหน้า | `[onClose]` (มาจาก `useCallback` จึงไม่เปลี่ยนทุก render) | ตอนบัตรเปิด (mount) และคืนค่าตอนบัตรปิด (unmount) |
@@ -316,7 +325,8 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | `GET /api/race/:key/info` | **ใหม่** หัวเรื่องเรซ (ให้ deep link/รีเฟรชรู้ว่าเป็นเรซอะไร) |
 | `GET /api/race/:key` | ไทม์ไลน์ + ผลจบ + พิทเร็วสุด + สรุป |
 | `GET /api/race/:key/driver/:num` | **ใหม่** เรื่องราวนักขับ (ส่งเฉพาะ event ของคนนั้น) |
-| `GET /api/track/:key` | **ปรับ** เส้นสนาม: ไฟล์ precompute ถ้ามี ไม่งั้นสร้างสด — ใน request เดียว |
+| `GET /api/track/:key` | **ปรับ** เส้นสนาม: ไฟล์ precompute ถ้ามี ไม่งั้นสร้างสด — ใน request เดียว + **เส้นพิทเลน** (`pitLane`) สร้างจากเส้นทางจริงของรถที่เข้าพิทในเรซนั้น |
+| `GET /api/race/:key/leaderboard` | **ใหม่** ข้อมูล Race Leaderboard (อันดับ, ช่องว่างเวลา, ยาง, พิท, รอบเร็วสุด, OUT) ผูกกับเวลา — Express ย่อ `/intervals` ~2.6 MB เหลือ ~240 KB |
 | `GET /api/positions/:key?from=&to=` | พิกัดรถช่วง ≤ 60 วินาที (downsample, ยกเลิกได้, priority ต่ำถ้าเป็น prefetch) |
 
 **API error ไม่ทำให้ระบบล่ม**: ทุก route ห่อด้วย `wrap()` ส่ง error ไปที่ error middleware ตัวเดียว ฝั่ง React ทุกการโหลดผ่าน
@@ -391,6 +401,22 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 **ข้อมูลสำรองไม่ต้องเก็บใหม่ทุกครั้ง**: ไฟล์ใน `backend/.cache/` อยู่ถาวรข้ามการรีสตาร์ท backend (ลบเองได้ถ้าต้องการเริ่มใหม่) — เก็บเฉพาะข้อมูลที่เคยโหลดสำเร็จอย่างน้อยหนึ่งครั้ง
 
 **เคล็ดลับก่อนอัดคลิป**: เปิดเรซที่จะ demo ไว้ก่อนสักครั้ง (ตอนไม่มีแข่งสด) ข้อมูลจะถูกเก็บลงดิสก์ แล้ว demo ได้แม้ OpenF1 ปิด
+
+### หน้าเรซแบบจอถ่ายทอดสด: Race Leaderboard ข้างแผนที่ + พิทเลน
+
+ผลทดลองใช้: หน้าเรซเดิมมีรายการเหตุการณ์ยาวหลายร้อยการ์ดใต้แผนที่ ดูยากว่า "ตอนนี้ใครนำ ห่างกันเท่าไหร่"
+จึงเปลี่ยนเป็นแบบจอทีวี: **แผนที่ (ซ้าย) + Race Leaderboard (ขวา)** ที่อัปเดตตามเวลาที่แผนที่เล่นอยู่
+— อันดับ, รอบ LAP x/ทั้งหมด, ช่องว่างกับผู้นำ/คันหน้า (กดสลับ), ยาง (S/M/H/I/W), ป้าย PIT, ⏱ รอบเร็วสุด, OUT, 🏁
+คลิกนักขับในตาราง = รถคันนั้นสว่างบนแผนที่ คันอื่นจาง · ใต้แผนที่มีแถบ "เหตุการณ์ล่าสุด" · ส่วนอื่นย้ายไปเป็นแท็บ
+(ผลจบ / เหตุการณ์ / พิทสต็อปเร็วสุด / คลิปไฮไลต์) — คลิกการ์ดเหตุการณ์แล้วหน้าเลื่อนขึ้นไปเล่นบนแผนที่ให้เอง
+
+- **ข้อมูล** ([lib/leaderboard.js](backend/lib/leaderboard.js)): `/position` + `/laps` + `/intervals` + `/stints` + `/pit` + `/session_result`
+  แปลงวันที่เป็นวินาทีนับจาก t0 จัดกลุ่มตามนักขับ (HashTable) และย่อ intervals เหลือทุก ~6 วินาที/คัน
+- **หาค่า ณ เวลาใดก็ได้** ([player/leaderboardModel.js](frontend/src/player/leaderboardModel.js)): ทุกค่าหาด้วย binary search
+  O(D log n) ต่อครั้ง (D = นักขับ) + mergeSort แถว O(D log D) — เรียกได้ 4 ครั้ง/วินาทีสบาย ๆ
+- **พิทเลน** ([lib/pitLane.js](backend/lib/pitLane.js)): OpenF1 ไม่มีพิกัดพิทเลน จึงดึงพิกัดของรถ 1 คันช่วงเข้าพิทปกติ (15–40 วิ)
+  แล้วแปลงด้วย transform เดียวกับเส้นสนาม วาดเป็นเส้นประสีเหลือง
+- **รูปนักแข่งเบลอ**: OpenF1 ให้ขนาด `1col` (~90px) → สลับเป็น `2col`/`4col` ตามขนาดที่แสดง ([photo.js](frontend/src/photo.js))
 
 ### หน้าแรก dashboard + คลิปไฮไลต์
 

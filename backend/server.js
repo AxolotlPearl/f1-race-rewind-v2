@@ -23,6 +23,8 @@ import { buildDriverStory } from "./lib/driverStory.js";
 import { buildStandings } from "./lib/standings.js";
 import { buildCalendar } from "./lib/calendar.js";
 import { findHighlight } from "./lib/youtube.js";
+import { buildLeaderboard } from "./lib/leaderboard.js";
+import { buildPitLane } from "./lib/pitLane.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TRACKS_DIR = path.join(__dirname, "data/tracks");
@@ -198,6 +200,18 @@ app.get(
   })
 );
 
+// Race Leaderboard ข้างแผนที่: อันดับ/ช่องว่างเวลา/ยาง/พิท/รอบเร็วสุด ผูกกับเวลา ให้หน้าเว็บหาค่า ณ เวลาที่เล่นอยู่
+app.get(
+  "/api/race/:sessionKey/leaderboard",
+  wrap(async (req, res) => {
+    const sessionKey = parsePositiveInt(req.params.sessionKey, "session key");
+    const data = await buildLeaderboard(sessionKey);
+    if (!data) throw new ApiError(404, "ยังไม่มีข้อมูลอันดับของเรซนี้");
+    setCdnCache(res, 3600);
+    res.json(data);
+  })
+);
+
 // เรื่องราวของนักขับ 1 คนในเรซ (ประมวลผลที่ server ส่งเฉพาะ event ที่เกี่ยวข้อง)
 app.get(
   "/api/race/:sessionKey/driver/:driverNumber",
@@ -221,22 +235,27 @@ app.get(
     const [session] = await getSessionInfo(sessionKey);
     if (!session) throw new ApiError(404, "ไม่พบเรซนี้");
 
+    let track = null;
     try {
-      const file = await readFile(path.join(TRACKS_DIR, `${Number(session.circuit_key)}.json`), "utf8");
-      setCdnCache(res, 30 * 86400);
-      res.type("json").send(file);
-      return;
+      track = JSON.parse(await readFile(path.join(TRACKS_DIR, `${Number(session.circuit_key)}.json`), "utf8"));
     } catch {
-      // ไม่มีไฟล์ precompute (สนามใหม่) → สร้างสดด้านล่าง
+      // ไม่มีไฟล์ precompute (สนามใหม่) → สร้างสดจากพิกัดจริง
+      track = await buildTrackAuto(sessionKey);
     }
-
-    const track = await buildTrackAuto(sessionKey);
     if (!track) {
       setCdnCache(res, 600);
       throw new ApiError(404, "ยังสร้างเส้นสนามของเรซนี้ไม่ได้");
     }
-    setCdnCache(res, 30 * 86400);
-    res.json(track);
+
+    // พิทเลน: สร้างจากเส้นทางจริงของรถที่เข้าพิทในเรซนี้ — สร้างไม่ได้ก็ยังส่งเส้นสนามตามปกติ
+    let pitLane = null;
+    try {
+      pitLane = await buildPitLane(sessionKey, track.transform);
+    } catch (err) {
+      console.error("pit lane:", err.message);
+    }
+    setCdnCache(res, pitLane ? 30 * 86400 : 600);
+    res.json({ ...track, pitLane });
   })
 );
 

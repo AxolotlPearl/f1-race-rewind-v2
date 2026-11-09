@@ -264,3 +264,26 @@ export function getLocation(sessionKey, { driverNumber, fromIso, toIso, priority
   // ไม่ cache: ตอนเล่นแผนที่ยาว ๆ แต่ละหน้าต่างเวลาไม่ซ้ำกันเลย เก็บไว้มีแต่บวม memory ของ instance
   return fetchOpenF1(base + dateFilter, { useCache: false, priority, isCancelled });
 }
+
+// ---------- ข้อมูลสำหรับ Race Leaderboard (ข้อมูลเรซที่จบแล้วไม่เปลี่ยน จึง cache ได้ตลอด) ----------
+
+/** เวลาเริ่มแต่ละรอบของนักขับทุกคน (~1,000 แถวต่อเรซ) — ใช้นับรอบปัจจุบัน + หารอบเร็วสุด */
+export function getLaps(sessionKey) {
+  return fetchOpenF1(`/laps?session_key=${encodeURIComponent(sessionKey)}`);
+}
+
+/** ช่วงยางแต่ละชุด (lap_start–lap_end, compound) */
+export function getStints(sessionKey) {
+  return fetchOpenF1(`/stints?session_key=${encodeURIComponent(sessionKey)}`);
+}
+
+/** อันดับที่เปลี่ยน (ส่งมาเฉพาะตอนเปลี่ยน ~300 แถวต่อเรซ) */
+export function getPositionChanges(sessionKey) {
+  return fetchOpenF1(`/position?session_key=${encodeURIComponent(sessionKey)}`);
+}
+
+/** ช่องว่างเวลากับผู้นำ/คันหน้า ทุก ~4 วินาที (~19,000 แถว ~2.6 MB) — Express ย่อก่อนส่งให้หน้าเว็บ */
+export function getIntervals(sessionKey) {
+  // ไม่เก็บก้อนดิบ 2.6 MB ไว้ใน cache — lib/leaderboard.js เก็บผลที่ย่อแล้วแทน
+  return fetchOpenF1(`/intervals?session_key=${encodeURIComponent(sessionKey)}`, { useCache: false });
+}

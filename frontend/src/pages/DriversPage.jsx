@@ -11,13 +11,14 @@ import SeasonCards from "../components/SeasonCards.jsx";
 import TeamLogo from "../components/TeamLogo.jsx";
 import DriverHover from "../components/DriverHover.jsx";
 import { Skeleton, EmptyState, ErrorState } from "../components/StatusViews.jsx";
+import { headshot } from "../photo.js";
 
 function DriverTile({ driver, year, onOpen }) {
   return (
     <DriverHover year={year} driverNumber={driver.driverNumber}>
       <button type="button" className="driver-tile" style={{ "--team-color": `#${driver.teamColour}` }} onClick={() => onOpen(driver.driverNumber)}>
         <span className="tile-number">{driver.driverNumber}</span>
-        {driver.headshotUrl ? <img className="tile-photo" src={driver.headshotUrl} alt="" loading="lazy" /> : <span className="tile-photo placeholder">{driver.acronym}</span>}
+        {driver.headshotUrl ? <img className="tile-photo" src={headshot(driver.headshotUrl)} alt="" loading="lazy" /> : <span className="tile-photo placeholder">{driver.acronym}</span>}
         <span className="tile-body">
           <span className="tile-first">{driver.firstName ?? ""}</span>
           <span className="tile-last">{driver.lastName ?? driver.fullName}</span>

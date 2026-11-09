@@ -8,6 +8,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import TeamLogo from "./TeamLogo.jsx";
+import { headshot } from "../photo.js";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" });
 
@@ -32,7 +33,7 @@ export default function DriverCard({ driver, year, maxPoints, onOpenTeam, teamLo
   return (
     <article className="profile-card">
       <header className="profile-head">
-        <Headshot url={driver.headshotUrl} alt={driver.acronym} />
+        <Headshot url={headshot(driver.headshotUrl, "4col")} alt={driver.acronym} />
         <div>
           <p className="profile-kicker">
             ฤดูกาล {year} · อันดับ {driver.rank} {driver.countryCode && `· ${driver.countryCode}`}

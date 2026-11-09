@@ -107,6 +107,8 @@ export const api = {
   driver: (sessionKey, driverNumber, signal) =>
     cached(`driver:${sessionKey}:${driverNumber}`, DAY_MS, `/api/race/${sessionKey}/driver/${driverNumber}`, signal),
   track: (sessionKey, signal) => fetchJson(`/api/track/${sessionKey}`, { signal }),
+  // ~240 KB ต่อเรซ — ไม่เก็บใน localStorage (เต็มเร็ว ทำให้ cache อื่นใช้ไม่ได้) ให้ CDN cache แทน
+  leaderboard: (sessionKey, signal) => fetchJson(`/api/race/${sessionKey}/leaderboard`, { signal }),
   health: (signal) => fetchJson("/api/health", { signal }),
   status: (signal) => fetchJson("/api/status", { signal }),
   positions: (sessionKey, fromMs, toMs, { signal, prefetch = false } = {}) => {

@@ -12,6 +12,7 @@ import { useAsync } from "../hooks/useAsync.js";
 import TeamLogo from "./TeamLogo.jsx";
 import DriverHover from "./DriverHover.jsx";
 import { Skeleton, EmptyState, ErrorState } from "./StatusViews.jsx";
+import { headshot } from "../photo.js";
 
 const TOP_N = 10;
 
@@ -20,7 +21,7 @@ function LeaderCard({ leader, second, year }) {
   return (
     <Link to={`/standings?year=${year}&driver=${leader.driverNumber}`} className="leader-card" style={{ "--team-color": `#${leader.teamColour}` }}>
       <span className="leader-badge">🏆 อันดับ 1 · {year}</span>
-      {leader.headshotUrl && <img className="leader-photo" src={leader.headshotUrl} alt="" />}
+      {leader.headshotUrl && <img className="leader-photo" src={headshot(leader.headshotUrl, "4col")} alt="" />}
       <span className="leader-info">
         <span className="leader-first">{leader.firstName}</span>
         <span className="leader-last">{leader.lastName ?? leader.fullName}</span>

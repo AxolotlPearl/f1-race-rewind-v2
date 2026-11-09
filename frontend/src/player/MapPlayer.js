@@ -7,6 +7,7 @@
 //   แล้วแจ้ง React เฉพาะสิ่งที่เปลี่ยน "นาน ๆ ครั้ง" ผ่าน callback:
 //     onStatus({ playing, statusText, speed })  — ตอนกดเล่น/หยุด/กำลังโหลด
 //     onEventChange(eventId)                     — ตอนเวลาเดินข้ามไปเหตุการณ์ถัดไปในไทม์ไลน์ (ไม่กี่วินาทีครั้ง)
+//     onTime(ms)                                 — เวลาปัจจุบัน ไม่เกิน 4 ครั้ง/วินาที (ให้ Race Leaderboard อัปเดตตาม)
 //
 // การทำงานเหมือนเครื่องเล่นวิดีโอ: "เก็บข้อมูลล่วงหน้าก่อนแล้วค่อยวิ่ง"
 //   - พิกัดรถถูกโหลดเป็นก้อน ๆ ละ CHUNK_MS ต่อท้ายคิว (Queue เขียนเอง) ไว้ล่วงหน้า
@@ -20,6 +21,7 @@ import { api } from "../api.js";
 const CHUNK_MS = 50000; // ต้อง ≤ 60 วินาที (ข้อจำกัดของ /api/positions)
 const BACK_BUFFER_MS = 15000; // เก็บย้อนหลังไว้ ให้กด ⏪ 10s ได้ทันที
 const PIT_WINDOW_PADDING_MS = 1500;
+const TIME_EMIT_INTERVAL_MS = 250;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const clockFormat = new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -110,12 +112,15 @@ function buildPitWindowIndex(events) {
 export class MapPlayer {
   /**
    * @param {{ dotsGroup: SVGGElement, scrubber: HTMLInputElement, clockLabel: HTMLElement, bufferFill: HTMLElement }} dom
-   * @param {{ onStatus: Function, onEventChange: Function }} callbacks
+   * @param {{ onStatus: Function, onEventChange: Function, onTime?: Function }} callbacks
    */
-  constructor(dom, { onStatus, onEventChange }) {
+  constructor(dom, { onStatus, onEventChange, onTime }) {
     this.dom = dom;
     this.onStatus = onStatus;
     this.onEventChange = onEventChange;
+    this.onTime = onTime;
+    this.lastTimeEmit = 0;
+    this.focus = null; // HashTable ของนักขับที่ผู้ใช้เลือกจาก leaderboard (null = ไม่เลือก)
     this.sessionKey = null;
     this.track = null;
     this.events = [];
@@ -298,7 +303,7 @@ export class MapPlayer {
     if (idx < 0) return;
     const chunk = this.chunks.at(idx);
     const nextChunk = this.chunks.at(idx + 1);
-    const highlight = this.clip?.highlight ?? null;
+    const highlight = this.clip?.highlight ?? this.focus;
 
     for (const dot of this.dots) {
       const s = chunk.series.get(dot.driverNumber);
@@ -346,12 +351,33 @@ export class MapPlayer {
     }
   }
 
-  renderFrame() {
+  /** ส่งเวลาให้ React ไม่เกิน 4 ครั้ง/วินาทีตอนเล่น (ทุกเฟรมจะทำให้ re-render 60 ครั้ง/วินาที) ตอนหยุด/กระโดดส่งทันที */
+  emitTime(ms, force = false) {
+    const now = performance.now();
+    if (!force && this.playing && now - this.lastTimeEmit < TIME_EMIT_INTERVAL_MS) return;
+    this.lastTimeEmit = now;
+    this.onTime?.(ms);
+  }
+
+  renderFrame(forceTime = false) {
     const ms = this.currentMs;
     if (ms == null) return;
     this.renderDots(ms);
     this.renderClock(ms);
     this.syncEvent(ms);
+    this.emitTime(ms, forceTime);
+  }
+
+  /** setFocus - เลือกนักขับจาก leaderboard: คันนั้นสว่าง คันอื่นจาง และยกจุดขึ้นมาอยู่บนสุด (null = ยกเลิก) */
+  setFocus(driverNumber) {
+    if (driverNumber == null) this.focus = null;
+    else {
+      this.focus = new HashTable(4);
+      this.focus.set(driverNumber, true);
+      const dot = this.dots.find((d) => d.driverNumber === driverNumber);
+      if (dot) this.dom.dotsGroup.append(dot.el);
+    }
+    if (this.currentMs != null) this.renderDots(this.currentMs);
   }
 
   emitStatus() {
@@ -382,7 +408,7 @@ export class MapPlayer {
       if (this.playing) this.waiting = true;
     }
     this.fillBuffer();
-    this.renderFrame();
+    this.renderFrame(true);
     this.emitStatus();
   }
 

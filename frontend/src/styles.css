@@ -2351,3 +2351,295 @@ a.cal-row:hover {
     margin: 10px 16px 0;
   }
 }
+
+/* ---- race page: เวที (แผนที่ + Race Leaderboard) + แท็บ ---- */
+
+main:has(.race-page) {
+  max-width: 1320px;
+}
+
+.stage-card {
+  margin-bottom: 20px;
+  scroll-margin-top: 12px;
+}
+
+.race-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+.stage-map .track-svg {
+  max-height: 520px;
+}
+
+.event-ticker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  min-height: 38px;
+}
+
+.ticker-lap {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.ticker-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pit-lane path {
+  fill: none;
+  stroke: #d29922;
+  stroke-width: 3;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+
+.pit-lane text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #d29922;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--bg-card);
+  stroke-width: 3px;
+}
+
+/* Race Leaderboard */
+.race-board {
+  background: #0b0f14;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, var(--accent), #8a0400);
+  color: #fff;
+}
+
+.board-lap {
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.board-lap strong {
+  font-size: 1.15rem;
+}
+
+.board-toggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.board-toggle button {
+  background: none;
+  border: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.board-toggle button.active {
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+}
+
+.board-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: 26px 4px 44px 1fr 24px 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.board-row:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.board-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.board-row.focused {
+  background: color-mix(in srgb, var(--team-color) 22%, transparent);
+  border-left-color: var(--team-color);
+}
+
+.board-row.faded {
+  opacity: 0.45;
+}
+
+.board-row.out {
+  color: var(--text-dim);
+}
+
+.board-pos {
+  text-align: right;
+  font-weight: 700;
+}
+
+.board-team {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--team-color);
+}
+
+.board-name {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.board-gap {
+  text-align: right;
+  color: #c9d1d9;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.board-row:first-child .board-gap {
+  color: var(--text-dim);
+}
+
+.board-tyre {
+  display: flex;
+  justify-content: center;
+}
+
+.tyre {
+  display: inline-grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tyre-S { color: #ff3b30; }
+.tyre-M { color: #ffd12e; }
+.tyre-H { color: #f0f0f0; }
+.tyre-I { color: #43b02a; }
+.tyre-W { color: #2f8fff; }
+
+.board-flags {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.flag-pit {
+  background: #d29922;
+  color: #111;
+  font-weight: 800;
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.flag-fastest {
+  color: #b36bff;
+}
+
+.board-foot {
+  margin: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: #c39bff;
+}
+
+.board-empty {
+  padding: 12px;
+}
+
+/* แท็บใต้เวที */
+.race-tabs {
+  margin-bottom: 20px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: -4px 0 14px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+.tab-count {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0 7px;
+  font-weight: 400;
+}
+
+@media (max-width: 960px) {
+  .race-stage {
+    grid-template-columns: 1fr;
+  }
+}

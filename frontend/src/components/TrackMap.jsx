@@ -11,6 +11,8 @@
 // props:
 //   race (หัวเรื่อง เพื่อรู้เวลาเริ่ม/จบ), timeline (drivers + events), playRequest (เหตุการณ์ที่แม่สั่งให้เล่น)
 //   onEventChange(eventId) — callback ส่งเหตุการณ์ปัจจุบันขึ้นไปให้แม่ส่งต่อให้ TimelinePanel
+//   onTimeChange(ms)       — เวลาบนแผนที่ (ไม่เกิน 4 ครั้ง/วินาที) ให้ Race Leaderboard
+//   focusDriver            — นักขับที่เลือกจาก leaderboard (สว่างคันเดียว)
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
@@ -20,7 +22,7 @@ import { Skeleton, EmptyState, ErrorState } from "./StatusViews.jsx";
 
 const SPEEDS = [1, 2, 5, 10];
 
-export default function TrackMap({ race, timeline, playRequest, onEventChange }) {
+export default function TrackMap({ race, timeline, playRequest, onEventChange, onTimeChange, focusDriver = null }) {
   const sessionKey = race.sessionKey;
   const [status, setStatus] = useState({ playing: false, speed: 1, statusText: "" });
   const playerRef = useRef(null);
@@ -32,6 +34,8 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange })
   // เก็บ callback ล่าสุดไว้ใน ref: player สร้างครั้งเดียว แต่ต้องเรียก onEventChange ตัวล่าสุดของแม่เสมอ
   const onEventChangeRef = useRef(onEventChange);
   onEventChangeRef.current = onEventChange;
+  const onTimeChangeRef = useRef(onTimeChange);
+  onTimeChangeRef.current = onTimeChange;
 
   const trackReq = useAsync((signal) => api.track(sessionKey, signal), [sessionKey]);
   const track = trackReq.status === "success" ? trackReq.data : null;
@@ -42,13 +46,21 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange })
     return track.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
   }, [track]);
 
+  // พิทเลน (Express สร้างจากเส้นทางจริงของรถที่เข้าพิท) — ไม่มีก็ไม่วาด
+  const pitLane = useMemo(() => {
+    const pts = track?.pitLane;
+    if (!pts || pts.length < 2) return null;
+    const mid = pts[Math.floor(pts.length / 2)];
+    return { d: pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" "), mid };
+  }, [track]);
+
   // effect 1: สร้าง MapPlayer เมื่อ DOM ของแผนที่พร้อม (track โหลดเสร็จ) แล้ว load เรซเข้าไป
   // deps: [track, timeline, race] — เปลี่ยนเรซ/สนาม = ทำลายตัวเก่า (cleanup) สร้างใหม่ ไม่มี player ค้างยิง API
   useEffect(() => {
     if (!track || !dotsRef.current) return undefined;
     const player = new MapPlayer(
       { dotsGroup: dotsRef.current, scrubber: scrubberRef.current, clockLabel: clockRef.current, bufferFill: bufferRef.current },
-      { onStatus: setStatus, onEventChange: (id) => onEventChangeRef.current?.(id) }
+      { onStatus: setStatus, onEventChange: (id) => onEventChangeRef.current?.(id), onTime: (ms) => onTimeChangeRef.current?.(ms) }
     );
     player.load({ sessionKey, track, drivers: timeline.drivers, events: timeline.events, dateStart: race.dateStart, dateEnd: race.dateEnd });
     playerRef.current = player;
@@ -64,6 +76,11 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange })
   useEffect(() => {
     if (playRequest && playerRef.current) playerRef.current.playEvent(playRequest.event);
   }, [playRequest]);
+
+  // effect 3: เลือกนักขับจาก leaderboard → บอก player (deps track: player ตัวใหม่ต้องได้ค่าเดิมด้วย)
+  useEffect(() => {
+    playerRef.current?.setFocus(focusDriver);
+  }, [focusDriver, track]);
 
   if (trackReq.status === "loading") {
     return (
@@ -90,6 +107,14 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange })
         </span>
       </div>
       <svg className="track-svg" viewBox={`0 0 ${track.viewBox.width} ${track.viewBox.height}`} preserveAspectRatio="xMidYMid meet">
+        {pitLane && (
+          <g className="pit-lane">
+            <path d={pitLane.d} />
+            <text x={pitLane.mid.x} y={pitLane.mid.y} dy="-8">
+              PIT
+            </text>
+          </g>
+        )}
         <path className="track-path" d={pathD} />
         {/* React ไม่ render อะไรใน <g> นี้ — MapPlayer สร้างจุดรถและขยับเองผ่าน ref */}
         <g ref={dotsRef} />
