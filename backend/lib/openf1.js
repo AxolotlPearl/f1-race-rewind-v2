@@ -287,3 +287,8 @@ export function getIntervals(sessionKey) {
   // ไม่เก็บก้อนดิบ 2.6 MB ไว้ใน cache — lib/leaderboard.js เก็บผลที่ย่อแล้วแทน
   return fetchOpenF1(`/intervals?session_key=${encodeURIComponent(sessionKey)}`, { useCache: false });
 }
+
+/** สภาพอากาศระหว่างเรซ ทุก ~1 นาที (อุณหภูมิอากาศ/พื้นสนาม, ความชื้น, ฝน, ลม) */
+export function getWeather(sessionKey) {
+  return fetchOpenF1(`/weather?session_key=${encodeURIComponent(sessionKey)}`);
+}

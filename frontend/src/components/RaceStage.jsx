@@ -1,5 +1,5 @@
 // src/components/RaceStage.jsx
-// "เวที" ของหน้าเรซ: แผนที่ (ซ้าย) + Race Leaderboard (ขวา) + แถบเหตุการณ์ล่าสุดใต้แผนที่
+// "เวที" ของหน้าเรซ: แถบสภาพสนาม/อากาศ + แผนที่ (ซ้าย) + Race Leaderboard (ขวา) + แถบเหตุการณ์ล่าสุดใต้แผนที่
 //
 // state ที่อยู่ที่นี่ (ไม่ยกขึ้นไป RacePage) เพราะเปลี่ยนบ่อย ~4 ครั้ง/วินาทีตอนเล่น:
 //   timeMs      — เวลาบนแผนที่ (TrackMap ส่งขึ้นมา) → leaderboard ใช้คำนวณอันดับ ณ เวลานั้น
@@ -14,6 +14,7 @@ import { useAsync } from "../hooks/useAsync.js";
 import { prepareLeaderboard } from "../player/leaderboardModel.js";
 import TrackMap from "./TrackMap.jsx";
 import RaceLeaderboard from "./RaceLeaderboard.jsx";
+import ConditionsBar from "./ConditionsBar.jsx";
 import { TYPE_ICON } from "./TimelineCard.jsx";
 import { Skeleton } from "./StatusViews.jsx";
 
@@ -29,6 +30,7 @@ export default function RaceStage({ race, timeline, playRequest, currentEventId,
   return (
     <div className="race-stage">
       <div className="stage-map">
+        {model && <ConditionsBar model={model} timeMs={timeMs} />}
         <TrackMap race={race} timeline={timeline} playRequest={playRequest} onEventChange={onEventChange} onTimeChange={setTimeMs} focusDriver={focusDriver} />
         {currentEvent && (
           <p className="event-ticker" aria-live="polite">

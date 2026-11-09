@@ -326,7 +326,7 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 | `GET /api/race/:key` | ไทม์ไลน์ + ผลจบ + พิทเร็วสุด + สรุป |
 | `GET /api/race/:key/driver/:num` | **ใหม่** เรื่องราวนักขับ (ส่งเฉพาะ event ของคนนั้น) |
 | `GET /api/track/:key` | **ปรับ** เส้นสนาม: ไฟล์ precompute ถ้ามี ไม่งั้นสร้างสด — ใน request เดียว + **เส้นพิทเลน** (`pitLane`) สร้างจากเส้นทางจริงของรถที่เข้าพิทในเรซนั้น |
-| `GET /api/race/:key/leaderboard` | **ใหม่** ข้อมูล Race Leaderboard (อันดับ, ช่องว่างเวลา, ยาง, พิท, รอบเร็วสุด, OUT) ผูกกับเวลา — Express ย่อ `/intervals` ~2.6 MB เหลือ ~240 KB |
+| `GET /api/race/:key/leaderboard` | **ใหม่** ข้อมูล Race Leaderboard (อันดับ, ช่องว่างเวลา, ยาง, พิท, รอบเร็วสุด, OUT, สภาพอากาศ, สถานะสนาม) ผูกกับเวลา — Express ย่อ `/intervals` ~2.6 MB เหลือ ~240 KB |
 | `GET /api/positions/:key?from=&to=` | พิกัดรถช่วง ≤ 60 วินาที (downsample, ยกเลิกได้, priority ต่ำถ้าเป็น prefetch) |
 
 **API error ไม่ทำให้ระบบล่ม**: ทุก route ห่อด้วย `wrap()` ส่ง error ไปที่ error middleware ตัวเดียว ฝั่ง React ทุกการโหลดผ่าน
@@ -416,6 +416,9 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
   O(D log n) ต่อครั้ง (D = นักขับ) + mergeSort แถว O(D log D) — เรียกได้ 4 ครั้ง/วินาทีสบาย ๆ
 - **พิทเลน** ([lib/pitLane.js](backend/lib/pitLane.js)): OpenF1 ไม่มีพิกัดพิทเลน จึงดึงพิกัดของรถ 1 คันช่วงเข้าพิทปกติ (15–40 วิ)
   แล้วแปลงด้วย transform เดียวกับเส้นสนาม วาดเป็นเส้นประสีเหลือง
+- **สภาพสนาม + อากาศเหนือแผนที่** ([ConditionsBar.jsx](frontend/src/components/ConditionsBar.jsx)): สถานะสนามจากข้อความ race control
+  (ธงเขียว / Safety Car / VSC / ธงแดง / ธงเหลืองรายมินิเซกเตอร์ / จบเรซ) + `/weather` (ฝน, อุณหภูมิอากาศ/พื้นสนาม, ความชื้น, ลม) ณ เวลาที่เล่น
+- **พิทเลนหด/ขยาย**: ไม่มีรถในพิท = เส้นบางสีมืด · มีรถเข้าพิท = เส้นขยาย สว่าง พร้อมป้าย "PIT · ชื่อคนที่อยู่ในพิท" (ป้ายดันออกนอกสนามไม่ให้ทับ)
 - **รูปนักแข่งเบลอ**: OpenF1 ให้ขนาด `1col` (~90px) → สลับเป็น `2col`/`4col` ตามขนาดที่แสดง ([photo.js](frontend/src/photo.js))
 
 ### หน้าแรก dashboard + คลิปไฮไลต์

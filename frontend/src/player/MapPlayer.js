@@ -193,7 +193,7 @@ export class MapPlayer {
       badge.textContent = "🔧 PIT";
       g.append(circle, label, badge);
       group.append(g);
-      return { driverNumber: d.driverNumber, el: g, badge, lastTransform: null, lastOpacity: "0", lastBadge: "0" };
+      return { driverNumber: d.driverNumber, acronym: d.acronym, el: g, badge, lastTransform: null, lastOpacity: "0", lastBadge: "0" };
     });
   }
 
@@ -304,6 +304,7 @@ export class MapPlayer {
     const chunk = this.chunks.at(idx);
     const nextChunk = this.chunks.at(idx + 1);
     const highlight = this.clip?.highlight ?? this.focus;
+    const inPit = [];
 
     for (const dot of this.dots) {
       const s = chunk.series.get(dot.driverNumber);
@@ -315,6 +316,7 @@ export class MapPlayer {
         transform = `translate(${x.toFixed(1)}, ${y.toFixed(1)})`;
         opacity = !highlight || highlight.has(dot.driverNumber) ? "1" : "0.25";
         badge = this.isInPit(dot.driverNumber, ms) ? "1" : "0";
+        if (badge === "1") inPit.push(dot.acronym);
       }
       // เขียน DOM เฉพาะค่าที่เปลี่ยนจริง ลดงาน layout/paint ต่อเฟรม
       if (transform !== dot.lastTransform) {
@@ -330,6 +332,18 @@ export class MapPlayer {
         dot.lastBadge = badge;
       }
     }
+    this.renderPitLane(inPit);
+  }
+
+  /** พิทเลน: ว่าง = หดมืด, มีรถอยู่ = ขยายสว่าง + ป้ายบอกว่าใครอยู่ในพิท (เขียน DOM เฉพาะตอนรายชื่อเปลี่ยน) */
+  renderPitLane(inPit) {
+    const lane = this.dom.pitLane;
+    if (!lane) return;
+    const key = inPit.join(",");
+    if (key === this.lastPitKey) return;
+    this.lastPitKey = key;
+    lane.classList.toggle("active", inPit.length > 0);
+    if (this.dom.pitLabel) this.dom.pitLabel.textContent = inPit.length > 0 ? `PIT · ${inPit.join(" ")}` : "PIT";
   }
 
   /** อัปเดต scrubber + นาฬิกาเฉพาะตอนวินาทีเปลี่ยน (เขียนค่า <input range> แพง ไม่ต้องทำทุกเฟรม) */

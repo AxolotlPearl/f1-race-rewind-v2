@@ -47,19 +47,33 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange, o
   }, [track]);
 
   // พิทเลน (Express สร้างจากเส้นทางจริงของรถที่เข้าพิท) — ไม่มีก็ไม่วาด
+  // ป้าย "PIT" ดันออกจากกลางสนาม 22px ไม่ให้ทับเส้นสนาม/จุดรถ
   const pitLane = useMemo(() => {
     const pts = track?.pitLane;
     if (!pts || pts.length < 2) return null;
     const mid = pts[Math.floor(pts.length / 2)];
-    return { d: pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" "), mid };
+    const cx = track.points.reduce((a, p) => a + p.x, 0) / track.points.length;
+    const cy = track.points.reduce((a, p) => a + p.y, 0) / track.points.length;
+    const len = Math.hypot(mid.x - cx, mid.y - cy) || 1;
+    const label = { x: mid.x + ((mid.x - cx) / len) * 22, y: mid.y + ((mid.y - cy) / len) * 22 };
+    return { d: pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" "), label };
   }, [track]);
+  const pitLaneRef = useRef(null);
+  const pitLabelRef = useRef(null);
 
   // effect 1: สร้าง MapPlayer เมื่อ DOM ของแผนที่พร้อม (track โหลดเสร็จ) แล้ว load เรซเข้าไป
   // deps: [track, timeline, race] — เปลี่ยนเรซ/สนาม = ทำลายตัวเก่า (cleanup) สร้างใหม่ ไม่มี player ค้างยิง API
   useEffect(() => {
     if (!track || !dotsRef.current) return undefined;
     const player = new MapPlayer(
-      { dotsGroup: dotsRef.current, scrubber: scrubberRef.current, clockLabel: clockRef.current, bufferFill: bufferRef.current },
+      {
+        dotsGroup: dotsRef.current,
+        scrubber: scrubberRef.current,
+        clockLabel: clockRef.current,
+        bufferFill: bufferRef.current,
+        pitLane: pitLaneRef.current,
+        pitLabel: pitLabelRef.current,
+      },
       { onStatus: setStatus, onEventChange: (id) => onEventChangeRef.current?.(id), onTime: (ms) => onTimeChangeRef.current?.(ms) }
     );
     player.load({ sessionKey, track, drivers: timeline.drivers, events: timeline.events, dateStart: race.dateStart, dateEnd: race.dateEnd });
@@ -108,9 +122,10 @@ export default function TrackMap({ race, timeline, playRequest, onEventChange, o
       </div>
       <svg className="track-svg" viewBox={`0 0 ${track.viewBox.width} ${track.viewBox.height}`} preserveAspectRatio="xMidYMid meet">
         {pitLane && (
-          <g className="pit-lane">
+          // ไม่มีใครอยู่ในพิท = เส้นบางสีมืด · มีคนเข้าพิท = MapPlayer ใส่ class "active" ให้เส้นขยายสว่าง + ชื่อคนในพิท
+          <g className="pit-lane" ref={pitLaneRef}>
             <path d={pitLane.d} />
-            <text x={pitLane.mid.x} y={pitLane.mid.y} dy="-8">
+            <text ref={pitLabelRef} x={pitLane.label.x} y={pitLane.label.y} dominantBaseline="middle">
               PIT
             </text>
           </g>

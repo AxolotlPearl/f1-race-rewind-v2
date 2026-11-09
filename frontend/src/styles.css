@@ -2399,23 +2399,85 @@ main:has(.race-page) {
   white-space: nowrap;
 }
 
+/* พิทเลน: ว่าง = บางและมืด, มีรถเข้า (class active จาก MapPlayer) = ขยาย สว่าง เรืองแสง */
 .pit-lane path {
   fill: none;
-  stroke: #d29922;
-  stroke-width: 3;
-  stroke-dasharray: 5 4;
+  stroke: #6b5a2e;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
   stroke-linecap: round;
-  opacity: 0.75;
+  opacity: 0.5;
+  transition: stroke-width 0.3s ease, opacity 0.3s ease, stroke 0.3s ease;
 }
 
 .pit-lane text {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  fill: #d29922;
+  fill: #8a7440;
   text-anchor: middle;
   paint-order: stroke;
   stroke: var(--bg-card);
   stroke-width: 3px;
+  opacity: 0.7;
+  transition: opacity 0.3s ease, font-size 0.3s ease;
+}
+
+.pit-lane.active path {
+  stroke: #ffc233;
+  stroke-width: 5;
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 194, 51, 0.7));
+}
+
+.pit-lane.active text {
+  font-size: 12px;
+  fill: #ffc233;
+  opacity: 1;
+}
+
+/* แถบสถานะสนาม + อากาศ เหนือแผนที่ */
+.conditions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  min-height: 34px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.track-status {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.track-status small {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.track-status.tone-green { background: rgba(46, 160, 67, 0.15); border-color: rgba(46, 160, 67, 0.5); color: #56d364; }
+.track-status.tone-yellow { background: rgba(210, 153, 34, 0.18); border-color: rgba(210, 153, 34, 0.6); color: #f2cc60; }
+.track-status.tone-sc { background: rgba(255, 194, 51, 0.2); border-color: #ffc233; color: #ffd866; animation: status-pulse 1.4s ease-in-out infinite; }
+.track-status.tone-red { background: rgba(248, 81, 73, 0.2); border-color: #f85149; color: #ff7b72; animation: status-pulse 1.4s ease-in-out infinite; }
+.track-status.tone-done { background: rgba(230, 237, 243, 0.1); border-color: var(--border); color: var(--text); }
+
+@keyframes status-pulse {
+  50% { opacity: 0.65; }
+}
+
+.weather {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--text-dim);
+}
+
+.weather span {
+  white-space: nowrap;
 }
 
 /* Race Leaderboard */

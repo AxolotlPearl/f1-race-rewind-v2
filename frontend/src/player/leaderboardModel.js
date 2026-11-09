@@ -51,6 +51,10 @@ export function prepareLeaderboard(data) {
     pits: toTable(data.pits, (rows) => rows),
     fastestTimes: data.fastestLaps.map((r) => r[0]),
     fastestLaps: data.fastestLaps,
+    weatherTimes: (data.weather ?? []).map((w) => w[0]),
+    weather: data.weather ?? [],
+    statusTimes: (data.trackStatus ?? []).map((r) => r[0]),
+    trackStatus: data.trackStatus ?? [],
     out: toTable(data.out, (v) => v),
     finish: toTable(data.finish, (v) => v),
   };
@@ -107,4 +111,18 @@ export function leaderboardAt(model, drivers, ms) {
   });
   const leaderLap = sorted.reduce((m, r) => (r.out ? m : Math.max(m, r.lap)), 0);
   return { rows: sorted, lap: Math.min(leaderLap, model.totalLaps), totalLaps: model.totalLaps, fastestLap: fastest };
+}
+
+/** สภาพอากาศ + สถานะสนาม ณ เวลา ms (binary search 2 ครั้ง O(log n)) — ก่อนมีข้อมูลแรกใช้ค่าอากาศแรกแทน */
+export function conditionsAt(model, ms) {
+  const s = (ms - model.t0) / 1000;
+  const wi = upperBound(model.weatherTimes, s);
+  const w = model.weather[Math.max(0, wi)] ?? null;
+  const ti = upperBound(model.statusTimes, s);
+  const t = ti >= 0 ? model.trackStatus[ti] : null;
+  return {
+    weather: w && { air: w[1], track: w[2], humidity: w[3], rain: w[4] === 1, wind: w[5], windDir: w[6] },
+    status: t ? t[1] : null,
+    yellowSectors: t ? t[2] : [],
+  };
 }

@@ -7,7 +7,7 @@
 //   วันที่ ISO ยาว ๆ → วินาทีนับจาก t0 (ตัวเลขสั้น) และจัดกลุ่มตามนักขับใน HashTable
 // ผลลัพธ์ cache ต่อเรซใน HashTable (ข้อมูลเรซที่จบแล้วไม่เปลี่ยน)
 
-import { getLaps, getStints, getPositionChanges, getIntervals, getPit, getSessionResult } from "./openf1.js";
+import { getLaps, getStints, getPositionChanges, getIntervals, getPit, getSessionResult, getWeather, getRaceControl } from "./openf1.js";
 import { HashTable } from "./HashTable.js";
 import { mergeSort } from "./sort.js";
 
@@ -70,13 +70,59 @@ export function fastestLapRecords(laps, t0) {
   return records;
 }
 
+/**
+ * สถานะสนามตามเวลา จากข้อความ race control:
+ *   ทั้งสนาม: green / sc (Safety Car) / vsc (Virtual SC) / red / chequered
+ *   ธงเหลืองรายเซกเตอร์: เปิดเมื่อ YELLOW/DOUBLE YELLOW, ปิดเมื่อ CLEAR ของเซกเตอร์นั้น หรือ TRACK CLEAR
+ * คืน [[วินาที, สถานะ, [เซกเตอร์ที่เหลือง...]], ...] เก็บเฉพาะตอนที่เปลี่ยน. O(n log n) จากการเรียง
+ */
+export function trackStatusSeries(raceControl, t0) {
+  const sorted = mergeSort(raceControl, (a, b) => Date.parse(a.date) - Date.parse(b.date));
+  const yellow = new HashTable(32); // sector -> true
+  let status = "green";
+  const out = [];
+  let lastKey = "";
+  for (const rc of sorted) {
+    const msg = (rc.message ?? "").toUpperCase();
+    if (rc.category === "SafetyCar") {
+      if (msg.includes("VIRTUAL") && msg.includes("DEPLOYED")) status = "vsc";
+      else if (msg.includes("VIRTUAL") && msg.includes("ENDING")) status = "green";
+      else if (msg.includes("DEPLOYED")) status = "sc";
+    } else if (rc.category === "Flag") {
+      if (rc.scope === "Track") {
+        if (rc.flag === "RED") status = "red";
+        else if (rc.flag === "CHEQUERED") status = "chequered";
+        else if (rc.flag === "GREEN" || rc.flag === "CLEAR") {
+          status = status === "chequered" ? status : "green";
+          for (const k of yellow.keys()) yellow.delete(k);
+        }
+      } else if (rc.scope === "Sector" && rc.sector != null) {
+        if (rc.flag === "YELLOW" || rc.flag === "DOUBLE YELLOW") yellow.set(rc.sector, true);
+        else if (rc.flag === "CLEAR") yellow.delete(rc.sector);
+      }
+    } else continue;
+    const sectors = yellow.keys().map(Number).sort((a, b) => a - b);
+    const key = `${status}|${sectors.join(",")}`;
+    if (key === lastKey) continue;
+    lastKey = key;
+    out.push([round((Date.parse(rc.date) - t0) / 1000, 1), status, sectors]);
+  }
+  return out;
+}
+
 export async function buildLeaderboard(sessionKey) {
   const cached = cache.get(sessionKey);
   if (cached) return cached;
 
   // อันดับ + รอบ เป็นข้อมูลหลัก (ต้องได้) ส่วน intervals/stints/pit ถ้าโหลดไม่ได้ก็ยังแสดงตารางได้
   const [positions, laps, results] = await Promise.all([getPositionChanges(sessionKey), getLaps(sessionKey), getSessionResult(sessionKey)]);
-  const [intervalsRes, stintsRes, pitRes] = await Promise.allSettled([getIntervals(sessionKey), getStints(sessionKey), getPit(sessionKey)]);
+  const [intervalsRes, stintsRes, pitRes, weatherRes, rcRes] = await Promise.allSettled([
+    getIntervals(sessionKey),
+    getStints(sessionKey),
+    getPit(sessionKey),
+    getWeather(sessionKey),
+    getRaceControl(sessionKey),
+  ]);
 
   if (positions.length === 0) return null;
   const t0 = Math.floor(Math.min(...positions.map((p) => Date.parse(p.date))) / 1000) * 1000;
@@ -131,10 +177,24 @@ export async function buildLeaderboard(sessionKey) {
           })
         : {},
     fastestLaps: fastestLapRecords(laps, t0),
+    // [วินาที, อากาศ °C, พื้นสนาม °C, ความชื้น %, ฝน 0/1, ลม m/s, ทิศลม °]
+    weather:
+      weatherRes.status === "fulfilled"
+        ? mergeSort(weatherRes.value, (a, b) => Date.parse(a.date) - Date.parse(b.date)).map((w) => [
+            off(w.date),
+            w.air_temperature,
+            w.track_temperature,
+            w.humidity,
+            w.rainfall ? 1 : 0,
+            w.wind_speed,
+            w.wind_direction,
+          ])
+        : [],
+    trackStatus: rcRes.status === "fulfilled" ? trackStatusSeries(rcRes.value, t0) : [],
     out,
     finish,
   };
   // เก็บ cache เฉพาะตอนข้อมูลครบ — ถ้าบางส่วนล้ม (เช่น OpenF1 ปิดชั่วคราว) ให้ลองใหม่ครั้งหน้า
-  if (intervalsRes.status === "fulfilled" && stintsRes.status === "fulfilled" && pitRes.status === "fulfilled") cache.set(sessionKey, data);
+  if ([intervalsRes, stintsRes, pitRes, weatherRes, rcRes].every((r) => r.status === "fulfilled")) cache.set(sessionKey, data);
   return data;
 }
