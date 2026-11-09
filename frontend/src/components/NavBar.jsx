@@ -10,6 +10,7 @@
 //   params       : ค่าพารามิเตอร์ที่รู้ตอนนี้ { sessionKey, driverNumber } (จาก URL หรือเรซ/นักขับที่ดูล่าสุด)
 //   labels       : ชื่อที่อ่านง่ายของ node ที่มีพารามิเตอร์ เช่น { race: "Japanese GP 2024", driver: "VER" }
 
+import { useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 const DISABLED_HINT = {
@@ -20,9 +21,20 @@ const DISABLED_HINT = {
 export default function NavBar({ graph, currentId, params, labels }) {
   const crumbs = currentId ? graph.shortestPath("home", currentId) : [];
   const menu = currentId ? graph.neighbors(currentId) : graph.neighbors("home");
+  const headerRef = useRef(null);
+
+  // effect: วัดความสูงแถบเมนู (sticky) ใส่ไว้ใน CSS variable --header-h ให้หน้าเรซคำนวณ "เวทีพอดีจอ" ได้
+  // ความสูงเปลี่ยนได้ (เมนูขึ้นบรรทัดใหม่ตอนจอแคบ) จึงใช้ ResizeObserver; cleanup = disconnect
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   return (
-    <header className="app-header">
+    <header className="app-header" ref={headerRef}>
       <div className="header-row">
         <Link to="/" className="brand">
           🏁 F1 Race Rewind <span className="replay-badge">v2</span>

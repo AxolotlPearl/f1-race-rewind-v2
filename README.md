@@ -235,6 +235,7 @@ docs/decision-log-v1.md  decision log ของงานแรก (path ใน�
 | component | effect ทำอะไร | dependency array | ทำงานตอนไหน |
 |---|---|---|---|
 | `useAsync` (ใช้ในทุกหน้า) | เรียก Express ผ่าน `loader` แล้ว setState ผลลัพธ์; cleanup = `controller.abort()` | `[...deps, attempt, enabled]` | ครั้งแรกที่ mount, เมื่อ deps เปลี่ยน (เช่น `sessionKey`), หรือผู้ใช้กดลองใหม่ — **ไม่** ทำงานทุก render |
+| `NavBar` | วัดความสูงแถบเมนูด้วย `ResizeObserver` → CSS variable `--header-h` (หน้าเรซใช้ทำเวทีพอดีจอ); cleanup = `disconnect()` | `[]` | mount (observer แจ้งเองเมื่อความสูงเปลี่ยน) |
 | `StatusBanner` | เช็ค `/api/status` ตอนเปิดเว็บ + ทุก 1 นาที; cleanup = `clearInterval` | `[refresh]` (`useCallback` จึงตั้งครั้งเดียว) | mount |
 | `StatusBanner` | subscribe event จาก `api.js` (ได้ข้อมูลสำรอง / เจอ 503); cleanup = ยกเลิก subscribe | `[refresh]` | mount |
 | `StatusBanner` | สถานะเปลี่ยน → แสดงแถบอีกครั้งแม้เคยกดปิด | `[state]` | เมื่อสถานะ OpenF1 เปลี่ยน |
@@ -419,6 +420,8 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 - **สภาพสนาม + อากาศเหนือแผนที่** ([ConditionsBar.jsx](frontend/src/components/ConditionsBar.jsx)): สถานะสนามจากข้อความ race control
   (ธงเขียว / Safety Car / VSC / ธงแดง / ธงเหลืองรายมินิเซกเตอร์ / จบเรซ) + `/weather` (ฝน, อุณหภูมิอากาศ/พื้นสนาม, ความชื้น, ลม) ณ เวลาที่เล่น
 - **พิทเลนหด/ขยาย**: ไม่มีรถในพิท = เส้นบางสีมืด · มีรถเข้าพิท = เส้นขยาย สว่าง รถที่อยู่ในพิทมีวงแหวนสีเหลือง และรายชื่อคนในพิทขึ้นในกล่อง "🔧 ในพิท: …" เหนือแผนที่ (ไม่ทับจุดรถ)
+- **เวทีพอดีจอ**: บนจอคอม แผนที่ + ปุ่มควบคุม + leaderboard สูงเท่าหน้าจอพอดี (ลบแถบเมนู sticky ที่ `NavBar` วัดความสูงจริงด้วย
+  `ResizeObserver` แล้วใส่ CSS variable `--header-h`) แผนที่ยืดเต็มที่ที่เหลือ แถว leaderboard ยืด/หดให้ครบทุกคัน
 - **รูปนักแข่งเบลอ**: OpenF1 ให้ขนาด `1col` (~90px) → สลับเป็น `2col`/`4col` ตามขนาดที่แสดง ([photo.js](frontend/src/photo.js))
 
 ### หน้าแรก dashboard + คลิปไฮไลต์
