@@ -15,7 +15,7 @@ import { useAsync } from "../hooks/useAsync.js";
 import { Skeleton } from "./StatusViews.jsx";
 
 const REASON_TEXT = {
-  "no-key": "ยังไม่ได้ตั้งค่า YouTube API key ที่ backend",
+  "no-key": "ยังไม่มีคลิปให้ดูในหน้านี้",
   "not-found": "ยังไม่พบคลิปไฮไลต์ของเรซนี้ในช่อง Formula 1",
   quota: "โควตาค้นหา YouTube ของวันนี้หมดแล้ว",
   error: "ค้นหาคลิปไม่สำเร็จ",
@@ -26,7 +26,7 @@ export default function HighlightVideo({ race }) {
 
   if (req.status === "loading") return <Skeleton variant="map" />;
   if (req.status === "error") {
-    return <p className="panel-hint">โหลดข้อมูลคลิปไม่สำเร็จ — {req.error.message}</p>;
+    return <p className="panel-hint">โหลดคลิปไม่สำเร็จ</p>;
   }
 
   const h = req.data;
@@ -50,7 +50,7 @@ export default function HighlightVideo({ race }) {
         <span className="video-badge">เปิดใน YouTube ↗</span>
       </a>
       <p className="video-title">
-        {h.title} <span className="dim">· FOM อนุญาตให้เล่นบน YouTube เท่านั้น คลิปจึงเปิดในแท็บใหม่</span>
+        {h.title}
       </p>
     </div>
   );

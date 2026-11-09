@@ -53,7 +53,7 @@ export default function DriversPage() {
     <div className="drivers-page">
       <section className="page-head">
         <h1>🧑‍✈️ นักแข่ง {year ?? ""}</h1>
-        <p className="page-sub">นักแข่งทุกคนในฤดูกาล จัดตามทีม · คลิกการ์ดเพื่อดูบัตรนักแข่ง · คลิกโลโก้ทีมเพื่อดูบัตรทีม</p>
+        <p className="page-sub">นักแข่งทุกคนในฤดูกาล จัดตามทีม</p>
       </section>
 
       <div className="scoreboard-toolbar">

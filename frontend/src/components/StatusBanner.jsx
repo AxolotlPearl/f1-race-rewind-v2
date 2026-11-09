@@ -62,16 +62,16 @@ export default function StatusBanner() {
   let detail = "";
   if (state === "locked") {
     tone = "live";
-    title = "🔴 ตอนนี้มีการแข่ง F1 สดอยู่ — OpenF1 ปิดการเข้าถึงข้อมูลชั่วคราวจนกว่าเซสชันจะจบ";
-    detail = status.savedEntries > 0 ? `หน้าที่เคยเปิดดูแล้วยังใช้ได้จากข้อมูลที่บันทึกไว้ (${status.savedEntries} รายการ) · หน้าที่ยังไม่เคยเปิดจะใช้ได้หลังจบเซสชัน` : "ยังไม่มีข้อมูลที่บันทึกไว้ หน้าเว็บจะกลับมาใช้ได้หลังจบเซสชัน";
+    title = "🔴 ตอนนี้มีการแข่ง F1 สดอยู่ — ข้อมูลใหม่จะใช้ได้หลังจบเซสชัน";
+    detail = status.savedEntries > 0 ? "หน้าที่เคยเปิดดูแล้วยังดูได้ตามปกติ" : "บางหน้าอาจยังโหลดไม่ได้ชั่วคราว";
   } else if (state === "down") {
     tone = "warn";
-    title = "🟠 ติดต่อ OpenF1 ไม่ได้ชั่วคราว";
-    detail = "กำลังใช้ข้อมูลที่บันทึกไว้เท่าที่มี ระบบจะลองใหม่เองทุก 1 นาที";
+    title = "🟠 โหลดข้อมูลใหม่ไม่ได้ชั่วคราว";
+    detail = "กำลังแสดงข้อมูลล่าสุดที่มี";
   } else if (state === "backend-down") {
     tone = "warn";
-    title = "🟠 ติดต่อ backend (Express) ไม่ได้";
-    detail = "ตรวจสอบว่ารัน npm run dev:backend อยู่ หรือรอสักครู่แล้วรีเฟรช";
+    title = "🟠 เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+    detail = "ลองรีเฟรชอีกครั้งในอีกสักครู่";
   }
 
   return (
@@ -79,7 +79,7 @@ export default function StatusBanner() {
       <div className="status-text">
         {title && <strong>{title}</strong>}
         {detail && <span>{detail}</span>}
-        {showSaved && <span className="saved-note">📦 ข้อมูลบางส่วนบนหน้านี้เป็นข้อมูลที่บันทึกไว้เมื่อ {timeFormat.format(new Date(savedAt))} (ข้อมูลเรซที่แข่งจบแล้วไม่เปลี่ยน จึงยังถูกต้อง)</span>}
+        {showSaved && <span className="saved-note">📦 ข้อมูลอัปเดตล่าสุด {timeFormat.format(new Date(savedAt))}</span>}
       </div>
       <button type="button" className="status-close" onClick={() => setDismissed(true)} aria-label="ปิดแถบแจ้งเตือน">
         ✕

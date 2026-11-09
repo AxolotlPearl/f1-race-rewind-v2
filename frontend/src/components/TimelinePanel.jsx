@@ -116,7 +116,7 @@ export default function TimelinePanel({ events, drivers, currentEventId, onSelec
       </div>
 
       <p className="panel-hint">
-        {visibleEvents.length} เหตุการณ์ · คลิกการ์ดเพื่อเล่นบนแผนที่ · คลิกชื่อย่อนักขับเพื่อไฮไลต์
+        {visibleEvents.length} เหตุการณ์
         {highlightedDriver != null && (
           <button type="button" className="link-btn" onClick={() => setHighlightedDriver(null)}>
             ล้างไฮไลต์

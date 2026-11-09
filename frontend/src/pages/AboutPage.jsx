@@ -20,7 +20,7 @@ export default function AboutPage({ graph }) {
         <div className="flow-diagram" aria-label="แผนภาพการทำงาน">
           <div className="flow-box">
             React + Vite
-            <small>หน้าเว็บ (frontend/)</small>
+            <small>หน้าเว็บ</small>
           </div>
           <span className="flow-arrow">⇄ /api/*</span>
           <div className="flow-box accent">
@@ -30,11 +30,11 @@ export default function AboutPage({ graph }) {
           <span className="flow-arrow">⇄ HTTPS</span>
           <div className="flow-box">
             OpenF1 API
-            <small>api.openf1.org (30 req/นาที)</small>
+            <small>ข้อมูลการแข่งจริง</small>
           </div>
         </div>
         <p className="health-line">
-          สถานะ backend:{" "}
+          สถานะระบบ:{" "}
           {health.status === "loading" && <span>⏳ กำลังเช็ค...</span>}
           {health.status === "success" && <span className="ok-text">✅ ทำงานปกติ</span>}
           {health.status === "error" && (
@@ -49,9 +49,9 @@ export default function AboutPage({ graph }) {
       </section>
 
       <section className="card">
-        <h2>Graph ของเมนู (src/Graph.js)</h2>
+        <h2>แผนผังเมนู</h2>
         <p className="panel-hint">
-          node = หน้า ({graph.nodes().length} หน้า) · edge = เมนูที่พาไปหน้าอื่น ({graph.edgeCount()} เส้น) — เมนูด้านบนสร้างจากตารางนี้
+          node = หน้า ({graph.nodes().length} หน้า) · edge = เมนูที่พาไปหน้าอื่น ({graph.edgeCount()} เส้น) 
         </p>
         <table className="data-table graph-table">
           <thead>

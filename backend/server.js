@@ -292,10 +292,10 @@ app.use((err, req, res, next) => {
   }
   // OpenF1 ปิด API ช่วงมีการแข่งสด และยังไม่มีข้อมูลสำรองบนดิสก์ของ request นี้ → บอกสาเหตุตรง ๆ (503 = ชั่วคราว)
   if (err.liveLockout) {
-    return res.status(503).json({ error: "ตอนนี้มีการแข่ง F1 สดอยู่ OpenF1 จึงปิดการเข้าถึงข้อมูลชั่วคราว — ลองใหม่หลังจบเซสชัน (ข้อมูลที่เคยเปิดดูแล้วยังใช้ได้)" });
+    return res.status(503).json({ error: "ตอนนี้มีการแข่ง F1 สดอยู่ ข้อมูลนี้จะใช้ได้หลังจบเซสชัน" });
   }
   console.error(err.message);
-  res.status(502).json({ error: "เรียกข้อมูลจาก OpenF1 ไม่สำเร็จ ลองใหม่อีกครั้ง" });
+  res.status(502).json({ error: "โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง" });
 });
 
 // ถ้ามี frontend ที่ build แล้ว (frontend/dist) ให้ Express เสิร์ฟด้วย — ใช้ตอนรันแบบ production เครื่องเดียว

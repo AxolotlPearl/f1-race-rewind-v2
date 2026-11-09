@@ -90,7 +90,7 @@ export default function RacePage({ onVisitRace }) {
 
       {timelineReq.status === "error" && <ErrorState title="โหลดข้อมูลเรซไม่สำเร็จ" error={timelineReq.error} onRetry={timelineReq.reload} />}
       {timelineReq.status === "empty" && (
-        <EmptyState title="OpenF1 ยังไม่มีข้อมูลของเรซนี้" hint="เรซที่เพิ่งแข่งจบอาจต้องรอข้อมูลสักพัก">
+        <EmptyState title="ยังไม่มีข้อมูลของเรซนี้" hint="เรซที่เพิ่งแข่งจบอาจต้องรอข้อมูลสักพัก">
           <Link to="/">เลือกเรซอื่น</Link>
         </EmptyState>
       )}
@@ -106,7 +106,6 @@ export default function RacePage({ onVisitRace }) {
       {race && (
         <section className="card highlight-card" aria-label="คลิปไฮไลต์">
           <h2>🎬 คลิปไฮไลต์</h2>
-          <p className="panel-hint">คลิปสรุปจากช่อง Formula 1 (ตัดต่อแล้ว ไม่ได้เรียงตามเวลาจริงของแผนที่) — ใช้คู่กับไทม์ไลน์ด้านล่างเพื่อดูว่าแต่ละช็อตเกิดตรงไหน</p>
           <HighlightVideo race={race} />
         </section>
       )}
@@ -129,7 +128,6 @@ export default function RacePage({ onVisitRace }) {
         <div className="side-panel">
           <section className="card">
             <h2>ผลจบการแข่ง</h2>
-            <p className="panel-hint">คลิกชื่อนักขับเพื่อดูเรื่องราวของเขาในเรซนี้</p>
             {timelineReq.status === "loading" && <Skeleton variant="row" count={5} />}
             {timeline && <ResultsTable sessionKey={sessionKey} results={timeline.sessionResult} year={race?.year} />}
           </section>

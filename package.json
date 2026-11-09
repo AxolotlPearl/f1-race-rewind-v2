@@ -2,6 +2,7 @@
   "name": "f1-race-rewind-v2",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "description": "F1 Race Rewind v2 - React-Vite frontend + Express backend (801201)",
   "scripts": {
     "install:all": "npm --prefix backend install && npm --prefix frontend install",
@@ -10,5 +11,8 @@
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
     "test": "npm --prefix backend test"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

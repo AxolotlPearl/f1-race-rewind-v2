@@ -106,7 +106,7 @@ export default function HomePage({ recentRace }) {
           <>
             {latest && (
               <p className="section-note">
-                เรซล่าสุดของปีนี้: <strong>{latest.meetingName}</strong> — กดการ์ดเพื่อดู
+                เรซล่าสุดของปีนี้: <strong>{latest.meetingName}</strong>
               </p>
             )}
             <div className="race-grid">

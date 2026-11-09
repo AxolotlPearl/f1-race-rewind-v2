@@ -6,7 +6,7 @@
 |---|---|
 | **API ที่ใช้** | [OpenF1 API](https://openf1.org) (API เดิมจากงานแรก ไม่ต้องใช้ API key) |
 | **งานแรก (Before)** | repo [AxolotlPearl/f1-race-rewind](https://github.com/AxolotlPearl/f1-race-rewind) · เว็บ https://miniprojectnodejs.vercel.app |
-| **งานนี้ (After)** | repo นี้ (fork มาจากงานแรก ประวัติ commit เดิมอยู่ครบ) |
+| **งานนี้ (After)** | repo นี้ (fork มาจากงานแรก ประวัติ commit เดิมอยู่ครบ) · เว็บ https://f1-race-rewind-v2.vercel.app |
 | **คลิปนำเสนอ** | _(ใส่ลิงก์ YouTube แบบ Unlisted)_ |
 
 เว็บสำหรับ "ดูย้อนหลัง" ว่าเรซ Formula 1 แต่ละสนามเกิดอะไรขึ้น: ไทม์ไลน์การแซง/เข้าพิท/ธง, แผนที่สนามที่รถวิ่งจริง
@@ -437,4 +437,5 @@ React (Vite :5173) ──/api/*──► Express (:3001) ──HTTPS──► ap
 - OpenF1 จำกัด 30 req/นาที — เล่นแผนที่ความเร็ว x10 นาน ๆ อาจต้องรอโหลด (ตัวเล่นหยุดรอแทนการกระตุก)
 - ปี 2023 OpenF1 ไม่มีข้อมูลการแซง หน้าเจาะนักขับจึงมีข้อมูลน้อยกว่า
 - ดัชนีค้นหาสร้างใน memory ของ instance — บน serverless จะสร้างใหม่ทุกครั้งที่ instance เย็นลง
-- ถัดไป: เทียบนักขับ 2 คนในหน้าเดียว, deploy frontend + backend บน Vercel
+- ถัดไป: เทียบนักขับ 2 คนในหน้าเดียว
+- Deploy: Vercel (`vercel.json` + `api/index.js` ใช้ Express app ตัวเดียวกับในเครื่อง, frontend build เป็น static) — ตั้ง `YOUTUBE_API_KEY` ใน Environment Variables ของโปรเจกต์บน Vercel เพื่อให้คลิปไฮไลต์ทำงาน

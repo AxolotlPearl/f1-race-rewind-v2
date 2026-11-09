@@ -19,7 +19,7 @@ export default function ScoreboardPage() {
     <div className="scoreboard-page">
       <section className="page-head">
         <h1>🏆 ตารางคะแนน {year ?? ""}</h1>
-        <p className="page-sub">คะแนนสะสมจากทุก Race และ Sprint ที่แข่งจบแล้ว · คลิกชื่อนักแข่งหรือทีมเพื่อดูบัตรข้อมูล · ชี้ชื่อนักแข่งเพื่อดูโปรไฟล์ย่อ</p>
+        <p className="page-sub">คะแนนสะสมจากทุก Race และ Sprint ที่แข่งจบแล้ว</p>
       </section>
 
       <div className="scoreboard-toolbar">
@@ -45,7 +45,7 @@ export default function ScoreboardPage() {
       {yearsReq.status === "error" && <ErrorState error={yearsReq.error} onRetry={yearsReq.reload} />}
       {standingsReq.status === "loading" && (
         <>
-          <p className="panel-hint">⏳ กำลังรวมคะแนนจากทุกสนาม (ครั้งแรกของปีอาจใช้เวลาไม่กี่วินาที)</p>
+          <p className="panel-hint">⏳ กำลังรวมคะแนน...</p>
           <Skeleton variant="row" count={10} />
         </>
       )}

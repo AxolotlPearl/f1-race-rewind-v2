@@ -56,13 +56,13 @@ export async function fetchJson(url, { signal, headers } = {}) {
     res = await fetch(url, { signal, headers });
   } catch (err) {
     if (err.name === "AbortError") throw err;
-    throw new ApiError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบอินเทอร์เน็ตหรือว่า backend รันอยู่หรือไม่", 0);
+    throw new ApiError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่", 0);
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     if (res.status === 503) emit({ type: "lockout" }); // OpenF1 ปิดช่วงแข่งสด และไม่มีข้อมูลสำรองของ request นี้
     // ไม่มีข้อความจาก Express เลย + status 5xx = ไม่ได้คุยกับ Express ของเรา (backend ดับ/proxy ต่อไม่ติด)
-    const fallback = res.status >= 500 ? "ติดต่อ backend ไม่ได้ — ระบบอาจปิดอยู่ ลองใหม่อีกครั้ง" : `เซิร์ฟเวอร์ตอบกลับผิดพลาด (HTTP ${res.status})`;
+    const fallback = res.status >= 500 ? "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง" : "โหลดข้อมูลไม่สำเร็จ";
     throw new ApiError(body.error || fallback, res.status);
   }
   // server ใช้ข้อมูลสำรองตอบ (OpenF1 ปิด/ล่ม) → บอกแถบสถานะว่าข้อมูลบนจอบันทึกไว้เมื่อไหร่

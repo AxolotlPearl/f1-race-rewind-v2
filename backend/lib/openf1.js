@@ -18,7 +18,10 @@ import { fileURLToPath } from "node:url";
 // → ตอบ 401 จนกว่าเซสชันจบ (เจอจริงระหว่าง São Paulo GP 2026) ถ้าไม่มีสำรอง ทั้งเว็บใช้ไม่ได้ช่วงนั้น
 // จึงบันทึกทุกคำตอบที่สำเร็จลงดิสก์ แล้วถ้ายิงจริงไม่สำเร็จ (401/5xx/เน็ตหลุด) ใช้ข้อมูลล่าสุดที่เคยได้แทน
 // (ข้อมูลเรซที่จบแล้วไม่เปลี่ยน ข้อมูลเก่าจึงยังถูกต้อง) — เก็บนอก git ใน backend/.cache/
-const DISK_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "../.cache/openf1");
+// บน Vercel ไฟล์ของโปรเจกต์เป็น read-only เขียนได้แค่ /tmp
+const DISK_DIR = process.env.VERCEL
+  ? "/tmp/f1rr-cache/openf1"
+  : path.join(path.dirname(fileURLToPath(import.meta.url)), "../.cache/openf1");
 
 function diskFile(apiPath) {
   return path.join(DISK_DIR, `${createHash("sha1").update(apiPath).digest("hex")}.json`);

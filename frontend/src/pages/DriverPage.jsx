@@ -116,12 +116,9 @@ export default function DriverPage({ onVisitRace, onVisitDriver }) {
           <section className="card">
             <h2>เหตุการณ์ของ {story.driver.acronym} ({story.events.length})</h2>
             {story.events.length === 0 ? (
-              <EmptyState title="ไม่มีเหตุการณ์ของนักขับคนนี้ในข้อมูล" hint="บางเรซ OpenF1 ไม่มีข้อมูลการแซง (เช่นปี 2023)" />
+              <EmptyState title="ไม่มีเหตุการณ์ของนักขับคนนี้ในข้อมูล" hint="บางเรซไม่มีข้อมูลการแซง" />
             ) : (
               <>
-                <p className="panel-hint">
-                  อยากเห็นบนแผนที่? <Link to={`/race/${sessionKey}`}>เปิดหน้าเรซ</Link> แล้วคลิกการ์ดเหตุการณ์
-                </p>
                 <ul className="timeline-list driver-events">
                   {story.events.map((e) => (
                     <TimelineCard key={e.id} event={e} year={race?.year} />

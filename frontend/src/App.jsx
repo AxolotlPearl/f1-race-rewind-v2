@@ -97,7 +97,7 @@ export default function App() {
           <a href="https://openf1.org" target="_blank" rel="noreferrer">
             OpenF1 API
           </a>{" "}
-          ผ่าน Express backend — ข้อมูลย้อนหลังเท่านั้น (REPLAY)
+          · ดูย้อนหลังเท่านั้น
         </p>
       </footer>
     </>
